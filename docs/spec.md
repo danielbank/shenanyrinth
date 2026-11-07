@@ -504,6 +504,16 @@ Generated Web Audio makes the slap clap and the Trinket gags. Each Player has mu
 ## Testing Decisions
 
 - **A good test checks external behaviour** through the highest seam: given a game state and an action, what state, views and events come out. Tests don't check how a rule is implemented. They're named after the rule in glossary terms, for example "Lost drops half the Pack's Gold, keeping the larger half". Every rule in this spec has at least one such test.
+- **Three test seams, each at the highest point that reaches the behaviour:**
+  1. **The rules engine's public interface (the main seam).** It's two functions:
+     - one that applies an action: given a game state, a Player and an action, it returns the next state plus the ordered list of what just happened;
+     - one that builds a Player's view: what that Player sees, their legal options right now, and their filtered event list.
+
+     Almost every test goes through it, including the fuzz games. Hidden information is tested through the view.
+  2. **The server over real sockets.** This seam is only for what the rules engine can't cover: seats and reconnect tokens, Host passing, skipping an offline Player, the Response window timer and auto-pass, and saving and reloading.
+  3. **The client's event queue**, as a pure module: play, skip and fast-forward.
+
+  React components have no test seam.
 - **Business logic is unit-tested in full:**
   - **The rules module:** every rule.
   - **The server's action handling:** each action's state change, and each Player's view, legal options and event list, including that hidden things stay hidden (others' Packs and items, and Caches above your INT).
