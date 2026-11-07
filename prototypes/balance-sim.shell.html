@@ -58,6 +58,7 @@ details.cfg summary { cursor: pointer; font-weight: 600; }
   <h1>Shenanyrinth balance simulation</h1>
   <p class="q"><b>The question</b> (<a href="https://github.com/danielbank/shenanyrinth/issues/17">Balance simulation</a>): which stats, items and builds are overpowered or useless, and does a 2–6 Player game really fit 20–40 minutes? Bots play complete games under every rule decided on the <a href="https://github.com/danielbank/shenanyrinth/issues/1">map</a>: Pivots and Lost, Torchlight, Clashes with Press and Retreat, Shakedowns and Rams, Meddle, Sway and Resist, the four Town buildings, Loot, Deeds, the Doom Track and the Guardian. Every number is editable below, so you can try a tuning and see what it does.</p>
   <p class="q muted"><b>How to read it:</b> bots are decent but not perfect. They plan each move over the Tiles they can see, fight Mobs when the odds are worth it, bank Gold when their Pack gets heavy, and jab at whoever is leading. Each bot plays one <b>build</b>: its 6 setup points plus a shopping list. Game length in minutes comes from a timing guess (15 s a Turn, 12 s per Exchange, and so on, all editable). Treat the minutes as relative, not gospel.</p>
+  <div class="panel find"><b>Verdict.</b> At the map's numbers the game fits its 20–40 minutes, but: DEX's optional squares make it the strongest stat (3 DEX wins ~1.7× a fair share), Forest Mobs are free points, the Dungeon is a revolving door so Artifacts and Gear barely exist, and the Guardian ends only ~1 game in 10. The <b>chosen tuning</b> (scenario 5) fixes all four. One thing tuning can't change: whoever slays the Guardian almost always wins, so the feat is effectively the victory, and points decide Doom Track games.</div>
   <div class="tabs" id="tabs"></div>
   <div id="body"></div>
   <h2>Settings <span class="muted" style="font-weight:400;font-size:13px">(every number from the map; changes apply to Watch and Run)</span></h2>
@@ -80,19 +81,7 @@ const pc = (x) => x === undefined || Number.isNaN(x) ? '–' : Math.round(x * 10
 const deepMerge = (a, b) => { for (const k in b) { if (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k])) a[k] = deepMerge(a[k] || {}, b[k]); else a[k] = b[k]; } return a; };
 
 /* ---------- scenarios (guided walkthroughs) ---------- */
-const PROPOSAL = {
-  rules: { hpBase: 4 },
-  forestMobs: [
-    { name: 'Goblin', Fight: 8, Magic: 8, Trickery: 6, wounds: 1, damage: 1, trophy: 1, gold: 1 },
-    { name: 'Myconid', Fight: 6, Magic: 8, Trickery: 10, wounds: 1, damage: 1, trophy: 1, gold: 1 },
-    { name: 'Pixie', Fight: 10, Magic: 6, Trickery: 8, wounds: 1, damage: 1, trophy: 1, gold: 1 },
-    { name: 'Dire Wolf', Fight: 10, Magic: 8, Trickery: 6, wounds: 2, damage: 1, trophy: 1, gold: 2 },
-    { name: 'Bandit', Fight: 6, Magic: 8, Trickery: 10, wounds: 2, damage: 1, trophy: 1, gold: 2 },
-    { name: 'Treant', Fight: 10, Magic: 6, Trickery: 8, wounds: 2, damage: 1, trophy: 1, gold: 2 }],
-  prices: { gearTier1: { gold: 5, artifacts: 0 }, training: { gold: 6, herbs: 1, artifacts: 1 } },
-  dungeon: { artifactTokens: 5 }, forest: { herbTokens: 4 },
-  guardian: { name: 'Red Wyrm', Fight: 14, Magic: 12, Trickery: 10, wounds: 4, damage: 3, trophyPerWound: 2, gold: 0 },
-};
+const PROPOSAL = {"rules":{"hpBase":4,"dexSquaresMax":1},"prices":{"gearTier1":{"gold":5,"artifacts":0},"training":{"gold":6,"herbs":1,"artifacts":1}},"dungeon":{"artifactTokens":5},"forest":{"herbTokens":4},"forestMobs":[{"name":"Goblin","Fight":8,"Magic":8,"Trickery":6,"wounds":1,"damage":1,"trophy":1,"gold":1},{"name":"Myconid","Fight":6,"Magic":8,"Trickery":10,"wounds":1,"damage":1,"trophy":1,"gold":1},{"name":"Pixie","Fight":10,"Magic":6,"Trickery":8,"wounds":1,"damage":1,"trophy":1,"gold":1},{"name":"Dire Wolf","Fight":6,"Magic":8,"Trickery":10,"wounds":2,"damage":1,"trophy":1,"gold":2},{"name":"Bandit","Fight":6,"Magic":8,"Trickery":10,"wounds":2,"damage":1,"trophy":1,"gold":2},{"name":"Treant","Fight":10,"Magic":6,"Trickery":8,"wounds":2,"damage":1,"trophy":1,"gold":2}],"guardian":{"name":"Red Wyrm","Fight":12,"Magic":10,"Trickery":8,"wounds":3,"damage":3,"trophyPerWound":2,"gold":0},"dungeonMobs":[{"name":"Skeleton","Fight":8,"Magic":12,"Trickery":12,"wounds":2,"damage":2,"trophy":2,"gold":3},{"name":"Wraith","Fight":12,"Magic":8,"Trickery":10,"wounds":2,"damage":2,"trophy":2,"gold":3},{"name":"Gazer","Fight":10,"Magic":12,"Trickery":8,"wounds":2,"damage":2,"trophy":2,"gold":3},{"name":"Cave Troll","Fight":12,"Magic":8,"Trickery":10,"wounds":3,"damage":2,"trophy":3,"gold":5},{"name":"Necromancer","Fight":8,"Magic":12,"Trickery":12,"wounds":3,"damage":2,"trophy":3,"gold":5}],"doomTrack":{"p2":30,"p3":24,"p4":20,"p5":19,"p6":18},"guardianBonus":5,"deedThresholds":{"monsterHunterKills":3,"relicArtifacts":2,"collectorTrinkets":1,"deepCacheRating":3,"masterGearTier":2,"nestEggGold":6,"pathfinderTurns":5}};
 const SCEN = [
   { id: 'baseline', title: '1 · Baseline', cfg: {},
     text: 'The numbers exactly as decided on the map. Watch for: games last about 25–40 minutes, but the Guardian falls in only about 1 game in 10 (the Doom Track ends the rest); most Players spend three-quarters of their Turns in the Forest; almost nothing gets bought.',
@@ -106,9 +95,9 @@ const SCEN = [
   { id: 'dungeon', title: '4 · The Dungeon is a revolving door', cfg: {},
     text: 'At HP 3 against Damage-2 Mobs and about 15% of Dungeon Turns ending Lost, a trip down lasts 2–4 Turns before you\'re sent home, and the walk back is 4–5 Turns. A third to a half of Players never go down at all, so Artifacts (and so Gear) barely exist. Watch "Never reached the Dungeon" and "Gear tiers per Player".',
     steps: [['Load the map\'s numbers', 'apply'], ['Run 300 games', 'run'], ['Watch a 2-Player game and follow the Dungeon trips in the log', 'watch']] },
-  { id: 'proposal', title: '5 · A candidate tuning', cfg: PROPOSAL,
-    text: 'A first pass at numbers, not a recommendation yet: base HP 4, tougher Forest dice, tier-1 Gear for Gold only (5), Training 6 Gold + Herb + Artifact, 5 Artifact and 4 Herb tokens, and a Red Wyrm of d14 / d12 / d10★. The Guardian ending rises to about 1 game in 4 and Gear starts to appear, but DEX still dominates, because that needs a rules decision, not a number.',
-    steps: [['Load the candidate tuning', 'apply'], ['Run 300 games at 2, 4 and 6 Players', 'run'], ['Measure stat value', 'stats']] },
+  { id: 'proposal', title: '5 · The chosen tuning', cfg: PROPOSAL,
+    text: 'The numbers settled in the Balance simulation: base HP 4; DEX gives at most 1 optional extra square; coin-flip Forest Mobs (weak d6, others d8–d10); fewer Trickery weaknesses (Dire Wolf now weak to Fight, Cave Troll to Magic); tier-1 Gear for 5 Gold (no Artifact); Training 6 Gold + Herb + Artifact; 5 Artifact and 4 Herb tokens; a Red Wyrm of d12 / d10 / d8★ with 3 Wounds; Guardian bonus 5; Doom Track 30 / 24 / 20 / 19 / 18; easier Deed thresholds. Watch for: the Guardian ends about half of games, games run 21–36 minutes, no build wins more than about 1.25× its share, and every Deed gets claimed sometimes.',
+    steps: [['Load the chosen tuning', 'apply'], ['Run 300 games at 2, 4 and 6 Players', 'run'], ['Measure stat value', 'stats']] },
 ];
 
 /* ---------- tabs ---------- */

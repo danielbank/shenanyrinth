@@ -40,16 +40,16 @@ const TRINKETS = ['Glove of Slapping', 'Ring of Reflection', 'Trombone of Sorrow
 
 const DEEDS = [
   { id: 'trailblazer', tier: 0, name: 'Trailblazer', text: 'reach the Dungeon', test: (p) => p.flags.reachedDungeon },
-  { id: 'hunter', tier: 0, name: 'Monster Hunter', text: 'kill 2 Mobs', test: (p) => p.kills >= 2 },
-  { id: 'nestegg', tier: 0, name: 'Nest Egg', text: 'have 10 Gold Deposited', test: (p) => p.keep >= 10 },
+  { id: 'hunter', tier: 0, name: 'Monster Hunter', text: 'kill N Mobs', test: (p, t) => p.kills >= t.monsterHunterKills },
+  { id: 'nestegg', tier: 0, name: 'Nest Egg', text: 'have 10 Gold Deposited', test: (p, t) => p.keep >= t.nestEggGold },
   { id: 'artist', tier: 0, name: 'Shakedown Artist', text: 'win a Shakedown', test: (p) => p.shakedownWins >= 1 },
   { id: 'relic', tier: 1, name: 'Relic Hunter', text: 'carry 3 Artifacts into the Town', test: (p) => p.flags.relic },
   { id: 'sense', tier: 1, name: 'Treasure Sense', text: 'claim any Cache', test: (p) => p.caches >= 1 },
-  { id: 'collector', tier: 1, name: 'Collector', text: 'own 2 Trinkets', test: (p) => p.trinkets.length >= 2 },
+  { id: 'collector', tier: 1, name: 'Collector', text: 'own 2 Trinkets', test: (p, t) => p.trinkets.length >= t.collectorTrinkets },
   { id: 'firstblood', tier: 1, name: 'First Blood', text: 'Wound the Guardian', test: (p) => p.guardianWounds >= 1 },
-  { id: 'pathfinder', tier: 2, name: 'Pathfinder', text: 'end 3 Turns in a row in the Dungeon', test: (p) => p.dungeonStreak >= 3 },
+  { id: 'pathfinder', tier: 2, name: 'Pathfinder', text: 'end 3 Turns in a row in the Dungeon', test: (p, t) => p.dungeonStreak >= t.pathfinderTurns },
   { id: 'deep', tier: 2, name: 'Deep Secrets', text: 'claim a Cache rated 4+', test: (p) => p.flags.deepCache },
-  { id: 'master', tier: 2, name: 'Master-at-Arms', text: 'wield a tier-3 Gear', test: (p) => STATS.some(s => p.gear[s] >= 3) },
+  { id: 'master', tier: 2, name: 'Master-at-Arms', text: 'wield a tier-3 Gear', test: (p, t) => STATS.some(s => p.gear[s] >= t.masterGearTier) },
   { id: 'slayer', tier: 2, name: 'Dungeon Slayer', text: 'kill 3 Dungeon Mobs', test: (p) => p.dungeonKills >= 3 },
 ];
 
@@ -57,7 +57,8 @@ const DEFAULTS = {
   rules: {
     pivotLimit: 2, hpBase: 3, slots: 5, baseCap: 5, totalCap: 7,
     shakedownTakeGold: 3, dexPerExtraSquare: 1, // 1 = an extra square per point of DEX; 2 = one per 2 DEX
-    dexSquaresOptional: true, // false = DEX squares are added to the roll and must be moved, like the dice
+    dexSquaresOptional: true, dexSquaresMax: 99, roundsAfterFeat: 0, // extra full Rounds played after the Guardian falls (0 = just finish the Round)
+    dexSquaresInTownOnly: false, // false = DEX squares are added to the roll and must be moved, like the dice
    
     resistCoversMobDie: false,       // literal rule: Resist only cancels nudges aimed at YOUR dice, not the Mob's die
     errandsWhenLeavingByGate: true,  // buildings passed still get used if the move ends by taking a Gate
@@ -65,6 +66,7 @@ const DEFAULTS = {
   doomTrack: { p2: 30, p3: 24, p4: 20, p5: 16, p6: 14 },
   guardianBonus: 9,
   deedValues: { easy: 3, medium: 4, hard: 5 },
+  deedThresholds: { monsterHunterKills: 2, relicArtifacts: 3, collectorTrinkets: 2, deepCacheRating: 4, masterGearTier: 3, nestEggGold: 10, pathfinderTurns: 3 },
   forest: { size: 9, straight: 50, bend: 20, t: 20, cross: 10, edgeT: 0.5, mobs: 6,
     goldTokens: 6, goldMin: 1, goldMax: 2, herbTokens: 3, caches: 2, cacheMin: 2, cacheMax: 3, cacheGold: 3, cacheMaterials: 1 },
   dungeon: { size: 7, straight: 5, bend: 75, t: 15, cross: 5, edgeT: 0.5, mobs: 5,
@@ -136,7 +138,7 @@ function say(g, msg) { if (!g.quiet) g.log.push(`R${g.round} ${g.players[g.seat]
 
 /* ---------- players ---------- */
 const eff = (g, p, s) => Math.min(g.cfg.rules.totalCap, p.base[s] + p.gear[s]);
-const dexSquares = (g, p) => Math.floor(eff(g, p, 'DEX') / Math.max(1, g.cfg.rules.dexPerExtraSquare));
+const dexSquares = (g, p, lv) => (g.cfg.rules.dexSquaresInTownOnly && (lv || p.level) !== 'town') ? 0 : Math.min(g.cfg.rules.dexSquaresMax, Math.floor(eff(g, p, 'DEX') / Math.max(1, g.cfg.rules.dexPerExtraSquare)));
 const maxHp = (g, p) => g.cfg.rules.hpBase + eff(g, p, 'CON');
 const slotsUsed = (p) => STATS.filter(s => p.gear[s] > 0).length + (p.boots ? 1 : 0) + (p.compass ? 1 : 0) + p.items.length;
 const torch = (g, p) => { const w = eff(g, p, 'WIS'); return w >= 5 ? 3 : w >= 3 ? 2 : 1; };
@@ -274,7 +276,7 @@ function setupBoards(g) {
 }
 
 /* ---------- route costs (in Turns), used by the bots to plan ---------- */
-const rate = (g, p, lv) => lv === 'town' ? 3.5 + dexSquares(g, p) : (3.5 + 0.6 * dexSquares(g, p)) * g.cfg.bots.pathEfficiency;
+const rate = (g, p, lv) => lv === 'town' ? 3.5 + dexSquares(g, p, lv) : (3.5 + 0.6 * dexSquares(g, p, lv)) * g.cfg.bots.pathEfficiency;
 const stairsTarget = (g) => { const F = g.L.forest; return F.revealed[F.stairs] ? F.stairs : ((F.n * F.n) >> 1); };
 const guardianTarget = (g) => { const D = g.L.dungeon; return D.revealed[D.guardianIdx] ? D.guardianIdx : D.guess; };
 function sameCost(g, p, lv, i, j) {
@@ -438,7 +440,7 @@ function collect(g, p, L, j) {
       if (eff(g, p, 'INT') >= t.rating) {
         L.tokens.delete(j); p.pack.gold += c.cacheGold;
         if (L.name === 'forest') p.pack.herbs += c.cacheMaterials; else p.pack.arts += c.cacheMaterials;
-        p.caches++; if (t.rating >= 4) p.flags.deepCache = true; g.m.caches++;
+        p.caches++; if (t.rating >= g.cfg.deedThresholds.deepCacheRating) p.flags.deepCache = true; g.m.caches++;
         say(g, `claims a rating-${t.rating} Cache`);
         if (die(g, 6) >= g.cfg.lootChance.cacheNeeds) loot(g, p);
         respawnToken(g, L, 'cache');
@@ -671,7 +673,7 @@ function shoppingPlan(g, p, pack) {
 function shopReady(g, p) { return shoppingPlan(g, p, p.pack).buys.some(b => b.kind !== 'potion'); }
 
 function chooseGoal(g, p) {
-  const roundsLeft = g.endTriggered ? 0 : g.doomLen - g.round;
+  const roundsLeft = g.endTriggered ? g.m.guardianKillRound + g.cfg.rules.roundsAfterFeat - g.round : g.doomLen - g.round;
   const home = { level: 'town', idx: TOWN.hall, why: 'home' };
   const homeCost = p.level === 'town' ? 0 : routeCost(g, p, p.level, p.idx, home);
   if (p.level !== 'town') {
@@ -712,7 +714,7 @@ function chooseArrivalHeading(g, p, goal) {
 function transition(g, p, dest, goal) {
   const from = p.level;
   p.level = dest.level; p.idx = dest.idx; p.clashAt = null;
-  if (dest.level === 'town') { if (p.pack.arts >= 3) p.flags.relic = true; say(g, `walks back into the Town through a Gate`); return; }
+  if (dest.level === 'town') { if (p.pack.arts >= g.cfg.deedThresholds.relicArtifacts) p.flags.relic = true; say(g, `walks back into the Town through a Gate`); return; }
   if (dest.level === 'dungeon') { p.flags.reachedDungeon = true; if (p.firstDungeonRound === null) p.firstDungeonRound = g.round; }
   reveal(g, g.L[dest.level], p.idx, torch(g, p));
   chooseArrivalHeading(g, p, goal);
@@ -866,7 +868,7 @@ function errands(g, p, passed) {
 }
 
 function checkDeeds(g, p) {
-  for (const d of g.deeds) if (!d.by && d.def.test(p)) { d.by = p.name; d.round = g.round; p.deedPts += d.value; p.deeds.push(d.def.name); say(g, `claims the Deed ${d.def.name} (+${d.value})`); }
+  for (const d of g.deeds) if (!d.by && d.def.test(p, g.cfg.deedThresholds)) { d.by = p.name; d.round = g.round; p.deedPts += d.value; p.deeds.push(d.def.name); say(g, `claims the Deed ${d.def.name} (+${d.value})`); }
 }
 
 function playTurn(g) {
@@ -895,7 +897,7 @@ function playTurn(g) {
   if (g.checks) checkInvariants(g);
   g.seat = (g.seat + 1) % g.players.length;
   if (g.seat === g.firstSeat) {
-    if (g.endTriggered || g.round >= g.doomLen) return endGame(g, g.endTriggered ? 'Guardian' : 'Doom Track');
+    if ((g.endTriggered && g.round >= g.m.guardianKillRound + g.cfg.rules.roundsAfterFeat) || g.round >= g.doomLen) return endGame(g, g.endTriggered ? 'Guardian' : 'Doom Track');
     g.round++;
   }
 }
