@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PROTOTYPE · Shenanyrinth screen layout</title>
+<!-- Plan: three structurally different game-screen layouts (A Mobile game, B Tabletop dashboard, C HUD overlay),
+     switchable via ?variant=A|B|C (bottom bar or ←/→). Same frozen mid-game moment in each. Throwaway. -->
+<style>
+  :root { --bg:#1d1b22; --panel:#2a2732; --panel2:#332f3d; --ink:#f1ece2; --mute:#a9a1b5; --line:#443f50; --accent:#b58cff;
+          --free:#4caf50; --pivot:#ff9800; --lost:#e53935; --gold:#f2c230; --t:48px; }
+  @media (max-width:760px){ :root { --t:32px; } }
+  * { box-sizing:border-box; }
+  html,body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  button { font:inherit; color:inherit; cursor:pointer; }
+  img.px { image-rendering:pixelated; }
+  .protobar { height:40px; display:flex; align-items:center; justify-content:center; gap:12px; background:#000; color:#ccc; font-size:12px; padding:0 8px; padding-top:env(safe-area-inset-top,0px); box-sizing:content-box; }
+  @media (max-width:600px){ .protobar .note { display:none; } }
+  #root { position:relative; height:calc(100dvh - 40px - env(safe-area-inset-top,0px)); overflow:hidden; }
+
+  /* ---------- shared pieces ---------- */
+  .board { position:relative; display:grid; grid-template-columns:repeat(9,var(--t)); grid-template-rows:repeat(9,var(--t)); width:max-content; border:3px solid #0b0a0d; border-radius:4px; background:#3c6b33; }
+  .sq { position:relative; width:var(--t); height:var(--t); cursor:pointer; }
+  .sq > * { position:absolute; inset:0; width:100%; height:100%; }
+  .sq img { image-rendering:pixelated; }
+  .sq .fog { background:rgba(10,40,12,.52); background-image:radial-gradient(circle at 30% 30%, rgba(90,140,60,.35) 0 18%, transparent 19%), radial-gradient(circle at 70% 65%, rgba(90,140,60,.3) 0 16%, transparent 17%); }
+  .sq .tok { inset:22%; width:56%; height:56%; }
+  .sq .mob { inset:6%; width:88%; height:88%; }
+  .sq .pc { inset:4%; width:92%; height:92%; filter:drop-shadow(0 0 2px #000); }
+  .sq .ring { border-radius:50%; inset:2%; width:96%; height:96%; border:2px solid var(--c); box-shadow:0 0 6px var(--c); }
+  .sq .optring { box-shadow:inset 0 0 0 3px var(--oc); z-index:2; animation:pulse 1.2s ease-in-out infinite alternate; }
+  @keyframes pulse { from { opacity:.55 } to { opacity:1 } }
+  .sq.sel::after { content:''; position:absolute; inset:0; box-shadow:inset 0 0 0 3px #fff; z-index:3; }
+  .sq .trail { inset:38%; width:24%; height:24%; border-radius:50%; background:rgba(181,140,255,.85); }
+  .die { display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; font:800 16px/1 ui-monospace,monospace; color:#1d1b22; background:#f1ece2; border:3px solid #0b0a0d; border-radius:6px; image-rendering:pixelated; }
+  .die.d8 { border-radius:4px; transform:rotate(45deg); } .die.d8 span { transform:rotate(-45deg); }
+  .die.glow { box-shadow:0 0 0 3px var(--c), 0 0 10px var(--c); }
+  .chip { display:inline-flex; align-items:center; gap:6px; padding:3px 8px; border-radius:999px; background:var(--panel2); border:1px solid var(--line); font-size:12px; white-space:nowrap; }
+  .chip img { width:16px; height:16px; image-rendering:pixelated; }
+  .stat { display:grid; grid-template-columns:auto 1fr; gap:2px 8px; }
+  .hearts { letter-spacing:1px; color:#ff5d6c; }
+  .hearts .e { color:#5b4e5e; }
+  .pips i { display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:2px; background:var(--c,#b58cff); }
+  .pips i.e { background:#4a4456; }
+  .slot { width:42px; height:42px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); display:inline-flex; align-items:center; justify-content:center; position:relative; }
+  .slot img { width:28px; height:28px; image-rendering:pixelated; }
+  .slot .ch { position:absolute; right:2px; bottom:0; font-size:10px; color:var(--mute); }
+  .slot.empty { opacity:.45; }
+  .btn { border:1px solid var(--line); background:var(--panel2); padding:9px 12px; border-radius:10px; font-weight:600; }
+  .btn.free { border-color:var(--free); color:#b9f6bc; } .btn.pivot { border-color:var(--pivot); color:#ffd59a; }
+  .btn.primary { background:var(--accent); border-color:var(--accent); color:#1d1b22; }
+  .phase { display:flex; gap:4px; flex-wrap:wrap; font-size:11px; }
+  .phase span { padding:2px 7px; border-radius:999px; background:var(--panel2); color:var(--mute); }
+  .phase span.on { background:var(--accent); color:#1d1b22; font-weight:700; }
+  .doom { display:flex; gap:2px; align-items:center; }
+  .doom i { width:7px; height:12px; border-radius:2px; background:#4a4456; }
+  .doom i.f { background:#c0392b; }
+  .pcard { display:grid; grid-template-columns:32px 1fr auto; gap:2px 8px; align-items:center; padding:6px 8px; border-radius:10px; background:var(--panel2); border:1px solid var(--line); border-left:4px solid var(--c); }
+  .pcard img { width:32px; height:32px; image-rendering:pixelated; grid-row:span 2; }
+  .pcard .nm { font-weight:700; } .pcard .sub { font-size:12px; color:var(--mute); }
+  .pcard.off { opacity:.6; }
+  .deed { display:flex; justify-content:space-between; gap:8px; padding:5px 8px; border-radius:8px; background:var(--panel2); font-size:12px; }
+  .deed.claimed { opacity:.55; text-decoration:line-through; }
+  .muted { color:var(--mute); }
+  .sec h3 { margin:0 0 6px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--mute); }
+
+  /* inspect + response + slap */
+  .inspect { position:fixed; z-index:30; left:50%; bottom:calc(84px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); width:min(92vw,360px); background:#f6efe1; color:#211d27; border:3px solid #0b0a0d; border-radius:12px; padding:10px 12px; box-shadow:0 10px 30px #000a; }
+  .inspect h4 { margin:0 0 4px; display:flex; align-items:center; gap:8px; } .inspect h4 img { width:28px; height:28px; image-rendering:pixelated; }
+  .inspect p { margin:0; font-size:13px; } .inspect .x { position:absolute; right:8px; top:6px; border:0; background:none; font-size:18px; }
+  .resp { position:fixed; z-index:40; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:flex-end; justify-content:center; padding:16px; padding-bottom:calc(90px + env(safe-area-inset-bottom,0px)); }
+  .resp .card { width:min(96vw,420px); background:var(--panel); border:2px solid var(--accent); border-radius:14px; padding:14px; }
+  .resp .vs { display:flex; align-items:center; justify-content:space-around; margin:10px 0; }
+  .resp .vs > div { text-align:center; }
+  .countdown { height:6px; border-radius:3px; background:#4a4456; overflow:hidden; margin-top:10px; }
+  .countdown i { display:block; height:100%; background:var(--accent); width:100%; animation:cd 8s linear forwards; }
+  @keyframes cd { to { width:0; } }
+  .slapbtn { position:relative; width:52px; height:52px; border-radius:50%; border:2px solid #0b0a0d; background:#ffcf6b; font-size:24px; box-shadow:0 4px 0 #0b0a0d; }
+  .slapbtn:disabled { filter:grayscale(1) brightness(.7); }
+  .slapbtn .cd { position:absolute; inset:-4px; border-radius:50%; background:conic-gradient(rgba(0,0,0,.55) var(--p,0%), transparent 0); pointer-events:none; }
+  .pow { position:fixed; z-index:50; left:50%; top:40%; transform:translate(-50%,-50%) rotate(-8deg); font:900 54px/1 Impact,"Arial Black",sans-serif; color:#ffdf3a; -webkit-text-stroke:3px #0b0a0d; pointer-events:none; animation:pow .9s ease-out forwards; }
+  @keyframes pow { 0%{ transform:translate(-50%,-50%) scale(.3) rotate(-8deg); opacity:0 } 25%{ transform:translate(-50%,-50%) scale(1.15) rotate(-8deg); opacity:1 } 100%{ transform:translate(-50%,-60%) scale(1) rotate(-8deg); opacity:0 } }
+  .shake { animation:shake .3s; } @keyframes shake { 25%{ transform:translateX(-6px) } 75%{ transform:translateX(6px) } }
+
+  /* switcher (not part of the design) */
+  .switcher { display:flex; align-items:center; gap:6px; background:#fff; color:#111; padding:3px 6px; border-radius:999px; font-size:13px; }
+  .switcher button { border:0; background:#eee; width:26px; height:26px; border-radius:50%; font-size:14px; }
+  .switcher .nm { min-width:160px; text-align:center; font-weight:700; }
+
+  /* ---------- Variant A: Mobile game (board first, bottom dock + sheet) ---------- */
+  .A { height:100%; display:grid; grid-template-rows:auto auto minmax(0,1fr) auto; }
+  .A .top { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--line); }
+  .A .mid { display:grid; grid-template-columns:auto; justify-content:center; align-content:start; gap:8px; padding:10px; }
+  .A .boardwrap { position:relative; }
+  .A .dice { position:absolute; left:6px; top:6px; display:flex; gap:6px; align-items:center; background:rgba(29,27,34,.8); padding:5px 8px; border-radius:10px; }
+  .A .sheet { background:var(--panel); border-top:1px solid var(--line); border-radius:16px 16px 0 0; display:flex; flex-direction:column; min-height:0; }
+  .A .tabs { display:flex; gap:6px; padding:8px 12px 0; }
+  .A .tabs button { flex:1; border:0; background:none; padding:8px; border-bottom:2px solid transparent; color:var(--mute); font-weight:700; }
+  .A .tabs button.on { color:var(--ink); border-color:var(--accent); }
+  .A .pane { padding:10px 12px; display:grid; gap:10px; overflow:auto; min-height:0; align-content:start; }
+  .A .dock { display:flex; gap:8px; align-items:center; padding:10px 12px; padding-bottom:calc(10px + env(safe-area-inset-bottom,0px)); background:#141218; border-top:1px solid var(--line); }
+  .A .dock .acts { display:flex; gap:6px; flex:1; flex-wrap:wrap; }
+  @media (max-width:600px){ .A .dock .btn, .B .actionbar .btn { padding:8px 9px; font-size:13px; } }
+  @media (min-width:1000px){
+    .A { grid-template-columns:1fr 360px; grid-template-rows:auto minmax(0,1fr) auto; }
+    .A .mid { overflow:auto; }
+    .A .top { grid-column:1 / -1; }
+    .A .sheet { grid-row:2 / 4; grid-column:2; border-radius:0; border-top:0; border-left:1px solid var(--line); }
+    .A .pane { max-height:none; }
+    .A .dock { grid-column:1; }
+  }
+
+  /* ---------- Variant B: Tabletop dashboard (3 columns / tabbed on phone) ---------- */
+  .B { height:100%; display:flex; flex-direction:column; }
+  .B .head { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--panel); border-bottom:1px solid var(--line); }
+  .B .cols { flex:1; min-height:0; overflow:auto; display:grid; grid-template-columns:260px auto 320px; gap:14px; padding:14px; justify-content:center; align-items:start; align-content:start; }
+  .B .col { display:grid; gap:10px; align-content:start; }
+  .B .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px; }
+  .B .actionbar { display:flex; gap:6px; flex-wrap:nowrap; align-items:center; padding:10px 14px; padding-bottom:calc(10px + env(safe-area-inset-bottom,0px)); background:#141218; border-top:1px solid var(--line); }
+  .B .phonetabs { display:none; }
+  @media (max-width:999px){
+    .B .phonetabs { display:flex; gap:4px; padding:6px 10px; background:var(--panel); border-bottom:1px solid var(--line); }
+    .B .actionbar .lbl { display:none; }
+    .B .head { padding:8px 12px; gap:6px; }
+    .B .phonetabs button { flex:1; border:1px solid var(--line); background:var(--panel2); border-radius:8px; padding:7px; font-weight:700; }
+    .B .phonetabs button.on { background:var(--accent); color:#1d1b22; border-color:var(--accent); }
+    .B .cols { grid-template-columns:minmax(0,1fr); justify-items:center; }
+    .B .col { width:100%; max-width:430px; }
+    .B .col[data-tab]:not(.show) { display:none; }
+  }
+
+  /* ---------- Variant C: HUD overlay (board full-bleed, info in corners, actions at the piece) ---------- */
+  .C { position:relative; height:100%; overflow:hidden; background:radial-gradient(circle at 50% 45%, #2c4a27 0, #0e140d 70%); display:flex; align-items:center; justify-content:center; padding:170px 8px 76px; }
+  @media (min-width:761px){ .C { padding:84px 8px 84px; } }
+  @media (min-width:761px){ .C .tr { left:auto; } }
+  .C .hud { position:absolute; z-index:5; }
+  .C .tl { left:10px; right:10px; top:74px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  @media (min-width:761px){ .C .tl { left:10px; right:auto; top:76px; width:300px; } }
+  .C .tr { right:10px; left:10px; top:14px; display:flex; gap:6px; justify-content:space-between; }
+  .C .tr .who { display:flex; flex-direction:column; align-items:center; gap:2px; background:none; border:0; padding:0; }
+  .C .tr .who small { font-size:10px; color:var(--mute); max-width:56px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .C .tr .who.turn small { color:var(--ink); font-weight:700; }
+  .C .tr .who.turn .av { box-shadow:0 0 0 2px var(--accent), 0 0 12px var(--accent); }
+  .C .tr .who.turn .av::before { content:'TURN'; position:absolute; top:-9px; left:50%; transform:translateX(-50%); font:800 8px/1 system-ui; background:var(--accent); color:#1d1b22; padding:2px 4px; border-radius:4px; }
+  .C .tr .av b small { font-size:8px; color:var(--mute); }
+  .C .turnbar { display:flex; flex-direction:column; gap:4px; background:rgba(20,18,24,.88); border:1px solid var(--accent); border-radius:12px; padding:6px 10px; text-align:left; width:100%; }
+  .C .turnbar .crumb { font-size:11px; color:var(--mute); } .C .turnbar .crumb b { color:var(--accent); }
+  .C .hudchip { display:inline-flex; align-items:center; gap:6px; background:rgba(20,18,24,.88); border:1px solid var(--line); border-radius:999px; padding:4px 10px; font-size:12px; }
+  .info-tap { cursor:pointer; }
+  @media (min-width:761px){ .C .tr { left:auto; justify-content:flex-end; gap:12px; } }
+  .C .tr .av { position:relative; width:40px; height:40px; border-radius:50%; background:var(--panel); border:3px solid var(--c); display:flex; align-items:center; justify-content:center; }
+  .C .tr .av img { width:28px; height:28px; image-rendering:pixelated; }
+  .C .tr .av b { position:absolute; bottom:-6px; right:-6px; font-size:10px; background:#0b0a0d; padding:1px 4px; border-radius:6px; }
+  .C .tr .av.off { opacity:.5; }
+  .C .bl { left:10px; bottom:calc(12px + env(safe-area-inset-bottom,0px)); display:flex; gap:8px; align-items:center; background:rgba(20,18,24,.88); border:1px solid var(--line); border-radius:14px; padding:8px 10px; }
+  .C .br { right:10px; bottom:calc(12px + env(safe-area-inset-bottom,0px)); display:flex; gap:8px; align-items:center; }
+  @media (max-width:420px){ .C .bl .chip { display:none; } }
+  .C .ctx { position:absolute; z-index:6; display:flex; gap:6px; transform:translate(-50%, calc(-100% - 8px)); }
+  .C .ctx .btn { padding:6px 9px; font-size:12px; background:rgba(20,18,24,.92); }
+  .C .drawer { position:absolute; z-index:20; top:0; bottom:0; right:0; width:min(92vw,360px); background:var(--panel); border-left:1px solid var(--line); padding:14px; display:grid; gap:12px; align-content:start; overflow:auto; transform:translateX(105%); transition:transform .25s; }
+  .C .drawer.open { transform:none; }
+  .C .scrim { position:absolute; inset:0; z-index:15; background:rgba(0,0,0,.4); }
+  .C .iconbtn { width:44px; height:44px; border-radius:12px; border:1px solid var(--line); background:rgba(20,18,24,.9); font-size:18px; }
+</style>
+</head>
+<body>
+<div class="protobar"><span class="note">PROTOTYPE · tap squares to inspect · try ⚔ and ✋</span><div class="switcher"><button id="prev" aria-label="Previous variant">←</button><span class="nm" id="vname"></span><button id="next" aria-label="Next variant">→</button></div></div>
+<div id="root"></div>
+
+<script>
+const ASSETS = {"grass0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAB1JREFUOI1jbDmW+Z+BAsBEieZRA0YNGDVgMBkAADGOAtL5/cdYAAAAAElFTkSuQmCC", "grass1": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAgMAAABinRfyAAAABGdBTUEAALGPC/xhBQAAAAlQTFRFi9h9ZaVWhMZpfk5vCQAAADJJREFUCNdjWAUEDAuaYMTSaUBiVRaIAEmsWpYFJFbCuUjEgiaGmSBi2aql00BiWWAJAFxUKK1jXEsRAAAAAElFTkSuQmCC", "grass2": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRF////44YoZaVW/b5ThMZpiQPwCAAAAEpJREFUCNdNjdEJQCEMAwNvBFfoAApOELP/TKY+UfPTg4QrtAON7hMBlWagMOrXV3WApcUzTmBsOJ6M6x/sWpCKC6Qf2AXFO7ZrAoI2Hifwpi13AAAAAElFTkSuQmCC", "coin": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAgMAAABinRfyAAAABGdBTUEAALGPC/xhBQAAAAxQTFRFAAAA44Yo/b5TPyYxPSBMUwAAAAF0Uk5TAEDm2GYAAAA0SURBVAjXY2BAAPs/QOL/fwYG5l/rDzAwP50NJJ5FA4mX2SDuahAXJPYKJAZSAlYM0QYDAMPmGEjGqGq5AAAAAElFTkSuQmCC", "herb": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAgMAAABinRfyAAAABGdBTUEAALGPC/xhBQAAAAxQTFRFAAAAhMZpR59KPyYxpCIyrAAAAAF0Uk5TAEDm2GYAAABDSURBVAjXY2CAA/4/QML+P5D4G3+AgeFr9P8PDN9W///D8Ov113qG/6+fxjPYv341n4H59ev1IOI/iPgDJA4gzGAAAIygHl4nfpDxAAAAAElFTkSuQmCC", "stairs": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAB5QTFRFAAAAUmB8djs2i5u06qVsWmmIvWxKJitEwMvcPyYx7W5AMgAAAAF0Uk5TAEDm2GYAAABESURBVAjXY+CcCQYTGGZCAcPMZmMgsAAyWkOBIAKZ0e5SXu5SgcJIc3FJgzDUkqCM8vI0QlJKQABiWHQAQTOQIQgGMwGEPjgNVWt6+AAAAABJRU5ErkJggg==", "gate": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRFAAAAdjs26qVsvWxKPyYxWHQ6vwAAAAF0Uk5TAEDm2GYAAABMSURBVAjXY2BAAi4uUAoEGBhYXFycVFxcHBhYnJSUjZRUwAwgADGcjYHABMQwNBQUNkEVERRGFXFxcRQBmQM02dkEYgmLM1AChQEBABzPEe8EXSXBAAAAAElFTkSuQmCC", "hero0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAABJQTFRFAAAAvWxKUmB8wMvci5u0PyYx3fDfjAAAAAF0Uk5TAEDm2GYAAABaSURBVAjXY2BAAqGhMBrCYg0NNg0NAAmEGBu7goRCVYyNncAMFyCAMEJCQtAYEClWoGagAQEMocEmxsbOpqEMoUouRsouSiBGoKCgKIgRGqQapAq0DWQVyDIAH0QZnVyQmb0AAAAASUVORK5CYII=", "hero1": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAABVQTFRFAAAAJitEdjs24ZplvWxK98KCPyYxJ/6HCgAAAAF0Uk5TAEDm2GYAAABnSURBVAjXHc3RDYQwDAPQfN0CiA1OXQC6AHI7ANT3jXrF+49Aky8/WZFjZibdZpGS50cDUakDySt9gSOAhhYoJANcuQbysi2Bf+YunzmBMof0UOJP8za3ctExgOpQTz3Nt/NnHVX3CzMJIOPp/rZKAAAAAElFTkSuQmCC", "hero2": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAB5QTFRFAAAAqrfMvWxKJitEi5u00XbQ98KCwMvcm0yjPyYxhW+MwQAAAAF0Uk5TAEDm2GYAAABoSURBVAjXTc2xCYBADAXQa28ewREOF7CwViKWVjkX0KQTQcnf1gQbUz1+Qn5KGThTDPApQwQImH3KcKgvs/U+6rgVsCGSQjRFgtKMbdzgmXlB/NsLdZ6AhLkSfpCLeZOAHas6vJSrV7xSOjc2m/JhPQAAAABJRU5ErkJggg==", "hero3": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAB5QTFRFAAAA6qVsJitE4Zpldjs20XbQm0yj98KCvWxKPyYxwZOybwAAAAF0Uk5TAEDm2GYAAABuSURBVAjXRc2xDYAwDATAtBmBCRiAgg2QGAAkFjCiR3IYAOXpUiDgt8Wm4Ruf/guH8IcWv9FRvDgTeq+YM0BfkAwlxBPIqTc8qLU+HNlQfdBWvwaqq4E3mqbbGKhJxlkdz7BPDl4ii72NFBkXlheWKDJppxZU3AAAAABJRU5ErkJggg==", "hero4": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAB5QTFRFAAAA98KC4ZplUmB8JitE6qVsi5u0vWxKwMvcPyYx+MwxjQAAAAF0Uk5TAEDm2GYAAABvSURBVAjXRYyxDYBADAO/ZQzGoISCDZBgARQGgPyXNFG+QyDBe1sSGtzkHNkO4RdMdip8OszfSov9MJCSrA5RSR2ecRaaYGHppbdwwN7WnfdxMif4jjBH3ymaELO1mKJu7HCrLg64mquB75RcMo4XRRU3svu3bDYAAAAASUVORK5CYII=", "hero5": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAABtQTFRFAAAAQ+GzJitE4Zpl98KCdjs2JZVqvWxKPyYxG/cZZQAAAAF0Uk5TAEDm2GYAAABwSURBVAjXHc0xDsIwEATAK2nzhvgHRMoDYp4QcEvBJX0w6zISMt5nc75qR3vSnogIeYp4kj0vbPCKFUi94gPIDn0O6ngv1+iIIQbHFOLo+N7WmX3mtea7DbEpqYXC4wPd7Eb8FDsMrKkme2s/Sys8//d5LEDyRCxcAAAAAElFTkSuQmCC", "dagger": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRFAAAAi5u0vWxKwMvcPyYxo/wp1QAAAAF0Uk5TAEDm2GYAAAAzSURBVAjXY2DABlhcoAwXFweogAmU4UyY4eIoAtHvYmwMZTipQBgsTiowA6EmA61AthkAZQIJcPsAuGYAAAAASUVORK5CYII=", "potion": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAABhQTFRFAAAAi5u0wMvcvWxK6qVsdeP/AJnbPyYxsxxfjgAAAAF0Uk5TAEDm2GYAAAA8SURBVAjXY2DAAtjLywvAjHIggDBMnNEZheJQRpF6OURTaChYG3tZaGg6hJGWhsYoT0uDGA03GW4XBAAAu/MWyHy8dtcAAAAASUVORK5CYII=", "wand": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAABJQTFRFAAAAdjs26qVs0XbQvWxKPyYxHySODwAAAAF0Uk5TAEDm2GYAAAA5SURBVAjXY2BgYAgNZQAD1tDQAAgj2BTCCA02hciFOpugM1ScoIxAUQiDNcQ1ABcjSBWnFMxSiDMAXQUPNimgKdAAAAAASUVORK5CYII=", "skull": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAMFBMVEUAAAA/JjH////3woK9bErqpWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAtbxskAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAV0lEQVQI10WL0RGAMAhD2w0KdIFGFqhOYLv/ThI8Tz7gXcgr5R+J4a2ExkCBwUhO4EiAwl6wSxP29xJ3lsPuN/2qDqzRitjorlNCEqxYtKdNQnTZDiuhPV6ZCotCV2P0AAAAAElFTkSuQmCC", "goblin": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAMFBMVEUAAAA/JjEllWpD4bMmK0R2Oza9bEqbTKPqpWwAAAAAAAAAAAAAAAAAAAAAAAAAAABGaOzwAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAYklEQVQI12WLIQ6AQAwEez+4gRxo9gfwhBN4MGgMHkH4Pi3BsUnTbTpj9ksCM8g+ZD8wNEAjL61AI5baSdKYHfYthx2qqoS+zkd99bJqefUNrtDV3/cZhbKUeCW6vdtD//IA2ZAM2AcrvvcAAAAASUVORK5CYII=", "wolf": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAMFBMVEUAAAA/JjHAy9xSYHyLm7TqpWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB2bKsIAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAXklEQVQI10XMwRHAIAgEQNJBTtMAxAaMNqDSf005zCPAY2eAE/kLiBE5EHUSSZF0o/vauMxtEMhXG5XXmMm1gE/GlUVEe3A3QvNCr4E+W2Eg3Kd94K3Ht2fHBmBseQEWkA1JfNe5ygAAAABJRU5ErkJggg==", "chicken": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAMFBMVEUAAAA/JjH////+rjTAy9zoRTe9bErqpWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADJTQ6iAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAWUlEQVQI132NwQ2AMAwD0w3qtOKP1QX48AdlgY7A/kvg9MULK5FOTmSb/QjVoLUCaCBwwCmr+A76kTCCnIIeN9epU8pnyBjInOC4FrSIDLTStsxLOJ/6qXwB8FgIS62W72wAAAAASUVORK5CYII=", "skeleton": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAMFBMVEUAAAA/JjH////3woK9bErqpWwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAtbxskAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAV0lEQVQI10WL0RGAMAhD2w0KdIFGFqhOYLv/ThI8Tz7gXcgr5R+J4a2ExkCBwUhO4EiAwl6wSxP29xJ3lsPuN/2qDqzRitjorlNCEqxYtKdNQnTZDiuhPV6ZCotCV2P0AAAAAElFTkSuQmCC"};
+/* ======================= Frozen mid-game state (shared) ======================= */
+const S = {
+  round: 7, doomLen: 18, phase: 2,            // phases: Start, Prepare, Roll and move, After moving, End
+  me: { name:'Dani', c:'#e53935', hero:'hero1', level:'Forest', pos:[4,5], heading:'N',
+        hp:3, hpMax:4, piv:1, pivMax:2, sway:2, swayMax:2, resist:1, resistMax:1, dexSq:3,
+        stats:{ STR:0, DEX:[3,1], INT:0, WIS:2, CON:1, CHA:0 },
+        pack:{ gold:5, herbs:2, artifacts:0 }, keep:14, trophies:3,
+        slots:[ {k:'dagger', n:'Leather Gloves', d:'Gear · DEX +1 (tier 1).'}, {k:'potion', n:'Twirlwater', d:'Potion · +1 Pivot this Turn.'}, {k:'wand', n:'Lucky Knucklebone', d:'Charm · add 1d6 to any roll of yours.', ch:'2/3'}, null, null ],
+        trinkets:[ {k:'chicken', n:'Rubber Chicken', d:'Trinket (1 pt) · squeak at any time; it also squeaks when you are slapped.'} ] },
+  roll: { dice:[{f:6, v:4}], stepsLeft:2 },
+  others: [
+    { name:'Bo',   c:'#1e88e5', hero:'hero0', level:'Dungeon', hp:'5/6', pack:9,  score:31, stats:'STR 5 · DEX 0 · INT 0 · WIS 1 · CON 3 · CHA 0', items:'Steel Blade (STR +2), Boots of Second Thoughts, Troll-Blood Tonic' },
+    { name:'Cass', c:'#43a047', hero:'hero2', level:'Town',    hp:'4/4', pack:0,  score:22, stats:'STR 0 · DEX 1 · INT 4 · WIS 1 · CON 1 · CHA 0', items:"Apprentice's Tome (INT +1), Orb of Foresight (2/3)" },
+    { name:'Dee',  c:'#fdd835', hero:'hero3', level:'Forest',  hp:'2/4', pack:6,  score:18, pos:[7,5], stats:'STR 0 · DEX 2 · INT 0 · WIS 0 · CON 1 · CHA 3', items:"Trickster's Coin (3/3), Stoneskin Salve" },
+    { name:'Eli',  c:'#8e24aa', hero:'hero4', level:'Forest',  hp:'4/5', pack:3,  score:15, pos:[1,2], offline:true, stats:'STR 2 · DEX 1 · INT 1 · WIS 0 · CON 2 · CHA 0', items:'Bronze Buckler (CON +1)' },
+    { name:'Finn', c:'#fb8c00', hero:'hero5', level:'Dungeon', hp:'3/7', pack:12, score:27, stats:'STR 1 · DEX 2 · INT 0 · WIS 3 · CON 4 · CHA 0', items:'Tin Lantern (WIS +1), Lucky Knucklebone (1/3)' },
+  ],
+  deeds: [ { n:'Trailblazer', t:'Easy · 3', d:'First to reach the Dungeon.', by:'Bo' }, { n:'Treasure Sense', t:'Medium · 4', d:'First to claim any Cache.' }, { n:'Master-at-Arms', t:'Hard · 5', d:'First to wield a tier-3 Gear.' } ],
+};
+const PHASES = ['Start','Prepare','Roll & move','After moving','End'];
+const myScore = () => S.me.keep + S.me.trophies + S.me.trinkets.length; // public score: Pack Gold is hidden, so it's excluded
+
+/* Forest board: 9x9 Tiles as exit sets, with features, tokens, mobs and fog */
+const DIRS = { N:[0,-1], E:[1,0], S:[0,1], W:[-1,0] };
+function rng(seed){ return () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const BOARD = (() => {
+  const r = rng(11), shapes = [['NS',50],['NE',20],['ESW',20],['NESW',10]], ORD = 'NESW';
+  const rot = (e,k) => [...e].map(d => ORD[(ORD.indexOf(d)+k)%4]).sort((a,b)=>ORD.indexOf(a)-ORD.indexOf(b)).join('');
+  const inb = (x,y) => x>=0 && y>=0 && x<9 && y<9;
+  const cells = [];
+  for (let y=0;y<9;y++) for (let x=0;x<9;x++) {
+    let ex = null, pool = shapes.slice();
+    while (!ex && pool.length) {
+      const tot = pool.reduce((a,s)=>a+s[1],0); let q = r()*tot, pick = pool[0];
+      for (const s of pool) { if ((q -= s[1]) < 0) { pick = s; break; } }
+      const rots = [...new Set([0,1,2,3].map(k=>rot(pick[0],k)))].filter(e => [...e].every(d => inb(x+DIRS[d][0], y+DIRS[d][1])));
+      if (rots.length) ex = rots[Math.floor(r()*rots.length)]; else pool = pool.filter(s => s !== pick);
+    }
+    cells.push({ x, y, exits: ex || 'ES', grass: ['grass0','grass1','grass0','grass2'][Math.floor(r()*4)] });
+  }
+  const at = (x,y) => cells[y*9+x];
+  // hand-set the moment: I'm on a T-junction heading north (arrived from the south)
+  at(4,5).exits = 'NES'; at(4,6).exits = 'NS'; at(4,7).exits = 'NS'; at(4,8).exits = 'NE'; at(4,4).exits = 'NS'; at(5,5).exits = 'EW';
+  const feat = { '0,4':{k:'gate',n:'Gate (west)',d:'Gate · leads back to the Town through its west Gate. Crossing it, you may take it: your move ends and you arrive in the Town.'},
+                 '8,6':{k:'gate',n:'Gate (east)',d:'Gate · leads back to the Town through its east Gate.'},
+                 '4,0':{k:'gate',n:'Gate (north)',d:'Gate · leads back to the Town through its north Gate.'},
+                 '2,8':{k:'gate',n:'Gate (south)',d:'Gate · leads back to the Town through its south Gate.'} };
+  const tokens = { '4,4':{k:'coin',n:'Gold',d:'Gold token · 2 Gold. Picked up when you pass over it.'}, '5,6':{k:'herb',n:'Herbs',d:'Herbs · a Material for the Apothecary and Arcanist. Picked up when you pass over it.'} };
+  const mobs = { '5,4':{k:'goblin',n:'Goblin',d:'Forest Mob · Fight d6 · Magic d6 · Trickery d4★ (greedy, easy to lure). 1 Wound · Damage 1 · Trophy 1 · 1 Gold. Stepping onto it is an Ambush.'} };
+  const hiddenMob = { '6,2':'wolf', '3,3':'stairs' };  // exist, but fogged (not drawn)
+  const revealed = new Set(); const reveal = (x,y) => { for (let dx=-1;dx<=1;dx++) for (let dy=-1;dy<=1;dy++) if (inb(x+dx,y+dy)) revealed.add((x+dx)+','+(y+dy)); };
+  [[4,8],[4,7],[4,6],[4,5],[7,5],[1,2]].forEach(p => reveal(...p)); [[0,4],[8,6],[4,0],[2,8]].forEach(([x,y]) => revealed.add(x+','+y));
+  return { cells, at, feat, tokens, mobs, hiddenMob, revealed, trail:[[4,8],[4,7],[4,6]] };
+})();
+const OPTIONS = [ { dir:'N', to:[4,4], pivot:false }, { dir:'E', to:[5,5], pivot:true } ];
+
+function tileSvg(exits) {
+  const ends = { N:[50,0], E:[100,50], S:[50,100], W:[0,50] };
+  return `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${[...exits].map(d => `<line x1="50" y1="50" x2="${ends[d][0]}" y2="${ends[d][1]}" stroke="#c99a5b" stroke-width="34"/>`).join('')}<rect x="33" y="33" width="34" height="34" fill="#c99a5b"/>${[...exits].map(d => `<line x1="50" y1="50" x2="${ends[d][0]}" y2="${ends[d][1]}" stroke="#d9ad6d" stroke-width="22"/>`).join('')}<rect x="39" y="39" width="22" height="22" fill="#d9ad6d"/></svg>`;
+}
+function boardHTML() {
+  let h = '';
+  for (const c of BOARD.cells) {
+    const key = c.x+','+c.y, rev = BOARD.revealed.has(key);
+    const opt = OPTIONS.find(o => o.to[0]===c.x && o.to[1]===c.y);
+    let inner = `<img src="${ASSETS[c.grass]}" alt="">${tileSvg(c.exits)}`;
+    if (BOARD.trail.some(([x,y]) => x===c.x && y===c.y)) inner += `<div class="trail"></div>`;
+    if (rev && BOARD.feat[key]) inner += `<img class="tok" src="${ASSETS[BOARD.feat[key].k]}" alt="">`;
+    if (rev && BOARD.tokens[key]) inner += `<img class="tok" src="${ASSETS[BOARD.tokens[key].k]}" alt="">`;
+    if (rev && BOARD.mobs[key]) inner += `<img class="mob" src="${ASSETS[BOARD.mobs[key].k]}" alt="">`;
+    const here = [S.me, ...S.others].filter(p => (p===S.me ? p.pos : p.pos) && (p.pos||[])[0]===c.x && p.pos[1]===c.y);
+    for (const p of here) inner += `<div class="ring" style="--c:${p.c}"></div><img class="pc" src="${ASSETS[p.hero]}" alt="">`;
+    if (!rev) inner += `<div class="fog"></div>`;
+    if (opt) inner += `<div class="optring" style="--oc:${opt.pivot ? 'var(--pivot)' : 'var(--free)'}"></div>`;
+    h += `<div class="sq" data-xy="${key}">${inner}</div>`;
+  }
+  return `<div class="board">${h}</div>`;
+}
+function describe(key) {
+  const [x,y] = key.split(',').map(Number), c = BOARD.at(x,y), rev = BOARD.revealed.has(key);
+  const names = { NS:'Straight', EW:'Straight', NE:'Bend', ES:'Bend', SW:'Bend', NW:'Bend', NESW:'Crossroads' };
+  const shape = names[c.exits] || (c.exits.length === 3 ? 'T-junction' : 'Tile');
+  const exitsTxt = [...c.exits].map(d => ({N:'north',E:'east',S:'south',W:'west'})[d]).join(', ');
+  const who = [S.me, ...S.others].filter(p => p.pos && p.pos[0]===x && p.pos[1]===y);
+  if (who.length) return { img: ASSETS[who[0].hero], n: who.map(p => p.name).join(', ') + (who[0]===S.me ? ' (you)' : ''), d: who[0]===S.me ? `Your piece, heading north on a ${shape} (exits ${exitsTxt}).` : `${who[0].name} · HP ${who[0].hp}. Their Pack is hidden. End your move here to Shakedown them.` };
+  if (rev && BOARD.mobs[key]) return { img: ASSETS[BOARD.mobs[key].k], n: BOARD.mobs[key].n, d: BOARD.mobs[key].d };
+  if (rev && BOARD.tokens[key]) return { img: ASSETS[BOARD.tokens[key].k], n: BOARD.tokens[key].n, d: BOARD.tokens[key].d + ` On a ${shape}.` };
+  if (rev && BOARD.feat[key]) return { img: ASSETS[BOARD.feat[key].k], n: BOARD.feat[key].n, d: BOARD.feat[key].d };
+  const base = `${shape} · exits ${exitsTxt}. Leaving by an exit other than your Heading costs a Pivot.`;
+  return { img: ASSETS.grass0, n: rev ? shape : `${shape} (in the fog)`, d: rev ? base + ' Nothing here.' : base + ' Its contents are hidden until Torchlight reveals them.' };
+}
+
+/* ---------- shared widgets ---------- */
+const hearts = (n, m) => `<span class="hearts">${'♥'.repeat(n)}<span class="e">${'♥'.repeat(m - n)}</span></span>`;
+const pips = (n, m, c) => `<span class="pips" style="--c:${c}">${Array.from({length:m}, (_,i) => `<i class="${i<n?'':'e'}"></i>`).join('')}</span>`;
+const doomBar = () => `<span class="doom">${Array.from({length:S.doomLen}, (_,i) => `<i class="${i<S.round?'f':''}"></i>`).join('')}</span>`;
+const phaseStrip = () => `<div class="phase">${PHASES.map((p,i) => `<span class="${i===S.phase?'on':''}">${p}</span>`).join('')}</div>`;
+const diceHTML = () => S.roll.dice.map(d => `<span class="die" title="d${d.f}"><span>${d.v}</span></span>`).join('') + `<span class="muted" style="font-size:12px">${S.roll.stepsLeft} steps left</span>`;
+const statsHTML = () => `<div class="stat">${Object.entries(S.me.stats).map(([k,v]) => `<b>${k}</b><span>${Array.isArray(v) ? `${v[0]+v[1]} <span class="muted">(${v[0]} + ${v[1]} Gear)</span>` : v}</span>`).join('')}</div>`;
+const vitalsHTML = () => `<div class="stat"><b>HP</b><span>${hearts(S.me.hp,S.me.hpMax)}</span><b>Pivots</b><span>${pips(S.me.piv,S.me.pivMax,'#ff9800')}</span><b>Sway</b><span>${pips(S.me.sway,S.me.swayMax,'#b58cff')}</span><b>Resist</b><span>${pips(S.me.resist,S.me.resistMax,'#4fc3f7')}</span></div>`;
+const packHTML = () => `<div style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip"><img src="${ASSETS.coin}" alt="">${S.me.pack.gold} Gold</span><span class="chip"><img src="${ASSETS.herb}" alt="">${S.me.pack.herbs} Herbs</span><span class="chip">◆ ${S.me.pack.artifacts} Artifacts</span><span class="chip">Keep ${S.me.keep}</span><span class="chip">Score ${myScore()}</span></div>`;
+const slotsHTML = () => `<div style="display:flex;gap:6px;flex-wrap:wrap">${S.me.slots.map((s,i) => s ? `<button class="slot" data-item="${i}" title="${s.n}"><img src="${ASSETS[s.k]}" alt="">${s.ch ? `<span class="ch">${s.ch}</span>` : ''}</button>` : `<span class="slot empty"></span>`).join('')}${S.me.trinkets.map((t,i) => `<button class="slot" data-trinket="${i}" title="${t.n}" style="border-style:dashed"><img src="${ASSETS[t.k]}" alt=""></button>`).join('')}</div>`;
+const playersHTML = () => S.others.map(p => `<div class="pcard ${p.offline?'off':''}" style="--c:${p.c}"><img src="${ASSETS[p.hero]}" alt=""><span class="nm">${p.name}${p.offline?' · offline':''}</span><span>${p.score} pts</span><span class="sub">${p.level} · HP ${p.hp}</span>${p.offline ? `<button class="btn" style="padding:3px 8px;font-size:12px" data-skip>Skip</button>` : '<span></span>'}</div>`).join('');
+const deedsHTML = () => S.deeds.map(d => `<div class="deed ${d.by?'claimed':''}" title="${d.d}"><span><b>${d.n}</b> <span class="muted">${d.d}</span></span><span>${d.by ? d.by : d.t}</span></div>`).join('');
+const actionsHTML = (compact) => OPTIONS.map(o => `<button class="btn ${o.pivot?'pivot':'free'}" data-go="${o.dir}">${compact ? '' : 'Go '}${({N:'North',E:'East'})[o.dir]} ${o.pivot ? '· 1 Pivot' : '· free'}</button>`).join('') + `<button class="btn" data-demo-resp>Demo: Response window</button>`;
+const slapHTML = () => `<button class="slapbtn" data-slap title="Slap whoever is taking their time (cooldown)">✋<span class="cd"></span></button>`;
+const autopass = () => `<label class="muted" style="display:flex;gap:6px;align-items:center;font-size:12px"><input type="checkbox" data-autopass> Auto-pass Response windows</label>`;
+
+/* ======================= Variants ======================= */
+const VARIANTS = {
+  A: { name:'Mobile game', render() {
+    let tab = window.__tabA || 'me';
+    const pane = { me: `<div class="sec"><h3>Vitals</h3>${vitalsHTML()}</div><div class="sec"><h3>Pack & Slots</h3>${packHTML()}<div style="margin-top:8px">${slotsHTML()}</div></div><div class="sec"><h3>Stats</h3>${statsHTML()}</div><div class="sec">${autopass()}</div>`,
+                   table: `<div class="sec"><h3>Players</h3><div style="display:grid;gap:6px">${playersHTML()}</div></div>`,
+                   deeds: `<div class="sec"><h3>Deeds this game</h3><div style="display:grid;gap:6px">${deedsHTML()}</div></div>` };
+    return `<div class="A">
+      <div class="top"><div style="display:flex;gap:8px;align-items:center"><img class="px" src="${ASSETS[S.me.hero]}" width="28" height="28" alt=""><b>Your Turn</b><span class="muted">· Forest</span></div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="muted" style="font-size:12px">Round ${S.round}/${S.doomLen}</span>${doomBar()}</div>${phaseStrip()}</div>
+      <div class="mid"><div class="boardwrap">${boardHTML()}<div class="dice">${diceHTML()}</div></div>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">${'<span class="chip">♥ '+S.me.hp+'/'+S.me.hpMax+'</span><span class="chip">Pivots '+S.me.piv+'/'+S.me.pivMax+'</span><span class="chip">DEX squares '+S.me.dexSq+'</span><span class="chip"><img src="'+ASSETS.coin+'" alt="">'+S.me.pack.gold+'</span>'}</div></div>
+      <div class="sheet"><div class="tabs">${['me','table','deeds'].map(t => `<button data-taba="${t}" class="${t===tab?'on':''}">${({me:'Me',table:'Table',deeds:'Deeds'})[t]}</button>`).join('')}</div><div class="pane">${pane[tab]}</div></div>
+      <div class="dock"><div class="acts">${OPTIONS.map(o => `<button class="btn ${o.pivot?'pivot':'free'}" data-go="${o.dir}">${o.pivot ? '→ East · 1 Pivot' : '↑ North · free'}</button>`).join('')}<button class="btn" data-demo-resp title="Demo: Response window">⚔</button></div>${slapHTML()}</div>
+    </div>`; } },
+
+  B: { name:'Tabletop dashboard', render() {
+    let tab = window.__tabB || 'board';
+    return `<div class="B">
+      <div class="head"><div style="display:flex;gap:10px;align-items:center"><b>Round ${S.round} of ${S.doomLen}</b>${doomBar()}</div>${phaseStrip()}<div style="display:flex;gap:8px;align-items:center">${diceHTML()}</div></div>
+      <div class="phonetabs">${['board','me','table'].map(t => `<button data-tabb="${t}" class="${t===tab?'on':''}">${({board:'Board',me:'Me',table:'Table'})[t]}</button>`).join('')}</div>
+      <div class="cols">
+        <div class="col ${tab==='table'?'show':''}" data-tab="table"><div class="panel sec"><h3>Players</h3><div style="display:grid;gap:6px">${playersHTML()}</div></div><div class="panel sec"><h3>Deeds</h3><div style="display:grid;gap:6px">${deedsHTML()}</div></div></div>
+        <div class="col ${tab==='board'?'show':''}" data-tab="board" style="justify-items:center">${boardHTML()}<div class="muted" style="font-size:12px">Forest · tap a square to inspect it</div></div>
+        <div class="col ${tab==='me'?'show':''}" data-tab="me"><div class="panel sec" style="display:grid;grid-template-columns:40px 1fr;gap:8px;align-items:center"><img class="px" src="${ASSETS[S.me.hero]}" width="40" height="40" alt=""><div><b>${S.me.name}</b> <span class="muted">· your Turn</span><br><span class="muted" style="font-size:12px">Forest · heading north</span></div></div>
+          <div class="panel sec"><h3>Vitals</h3>${vitalsHTML()}</div><div class="panel sec"><h3>Stats</h3>${statsHTML()}</div><div class="panel sec"><h3>Pack & Slots</h3>${packHTML()}<div style="margin-top:8px">${slotsHTML()}</div><div style="margin-top:8px">${autopass()}</div></div></div>
+      </div>
+      <div class="actionbar"><span class="muted lbl" style="font-size:12px">${S.roll.stepsLeft} steps left · at a T-junction:</span>${OPTIONS.map(o => `<button class="btn ${o.pivot?'pivot':'free'}" data-go="${o.dir}">${o.pivot ? '→ East · 1 Pivot' : '↑ North · free'}</button>`).join('')}<button class="btn" data-demo-resp title="Demo: Response window">⚔</button><span style="flex:1"></span>${slapHTML()}</div>
+    </div>`; } },
+
+  C: { name:'HUD overlay', render() {
+    const open = window.__drawerC;
+    return `<div class="C">
+      <div class="hud tl">
+        <button class="turnbar info-tap" data-info="turn"><span><b>Your Turn</b> · ${PHASES[S.phase]}</span><span class="crumb">${PHASES.map((p,i) => i===S.phase ? `<b>${p}</b>` : p).join(' › ')}</span></button>
+        <button class="hudchip info-tap" data-info="dice"><span class="die" style="width:22px;height:22px;font-size:12px;border-width:2px"><span>${S.roll.dice[0].v}</span></span>Rolled ${S.roll.dice[0].v} · ${S.roll.stepsLeft} steps left</button>
+        <button class="hudchip info-tap" data-info="doom">☠ Doom: Round ${S.round} of ${S.doomLen}</button>
+      </div>
+      <div class="hud tr">${[S.me, ...S.others].map((p, i) => `<button class="who info-tap ${i===0?'turn':''}" data-player="${i}"><div class="av ${p.offline?'off':''}" style="--c:${p.c}"><img src="${ASSETS[p.hero]}" alt=""><b>${p===S.me ? myScore() : p.score}<small> pts</small></b></div><small>${p===S.me ? 'You' : p.name}${p.offline ? ' · off' : ''}</small></button>`).join('')}</div>
+      <div id="cBoard" style="position:relative">${boardHTML()}<div class="ctx" id="ctx">${OPTIONS.map(o => `<button class="btn ${o.pivot?'pivot':'free'}" data-go="${o.dir}">${o.dir==='N'?'↑ free':'→ 1 Pivot'}</button>`).join('')}</div></div>
+      <div class="hud bl info-tap" data-drawer="me" title="Your vitals: tap for your full sheet"><img class="px" src="${ASSETS[S.me.hero]}" width="30" height="30" alt="">${hearts(S.me.hp,S.me.hpMax)}${pips(S.me.piv,S.me.pivMax,'#ff9800')}<span class="chip"><img src="${ASSETS.coin}" alt="">${S.me.pack.gold}</span><span class="muted">▲</span></div>
+      <div class="hud br"><button class="iconbtn" data-drawer="deeds" title="Deeds">★</button><button class="iconbtn" data-demo-resp title="Demo: Response window">⚔</button>${slapHTML()}</div>
+      ${open ? `<div class="scrim" data-close></div>` : ''}
+      <div class="drawer ${open?'open':''}">${open === 'table' ? `<div class="sec"><h3>Players</h3><div style="display:grid;gap:6px">${playersHTML()}</div></div>` : open === 'deeds' ? `<div class="sec"><h3>Deeds</h3><div style="display:grid;gap:6px">${deedsHTML()}</div></div>` : `<div class="sec"><h3>Vitals</h3>${vitalsHTML()}</div><div class="sec"><h3>Pack & Slots</h3>${packHTML()}<div style="margin-top:8px">${slotsHTML()}</div></div><div class="sec"><h3>Stats</h3>${statsHTML()}</div>${autopass()}`}<button class="btn" data-close>Close</button></div>
+    </div>`; } },
+};
+
+/* ======================= Shell: switching, inspect, response window, slap ======================= */
+const KEYS = Object.keys(VARIANTS);
+let variant = KEYS.includes(new URLSearchParams(location.search).get('variant')) ? new URLSearchParams(location.search).get('variant') : 'A';
+let slapReadyAt = 0;
+function render() {
+  document.getElementById('root').innerHTML = VARIANTS[variant].render();
+  document.getElementById('vname').textContent = `${variant} (${VARIANTS[variant].name})`;
+  if (variant === 'C') { // anchor contextual buttons above my piece
+    const me = document.querySelector(`#cBoard .sq[data-xy="${S.me.pos.join(',')}"]`), ctx = document.getElementById('ctx');
+    if (me && ctx) { ctx.style.left = (me.offsetLeft + me.offsetWidth / 2) + 'px'; ctx.style.top = me.offsetTop + 'px'; }
+  }
+  tickSlap();
+}
+function setVariant(v) { variant = v; const p = new URLSearchParams(location.search); p.set('variant', v); history.replaceState(null, '', '?' + p); closeInspect(); render(); }
+document.getElementById('prev').onclick = () => setVariant(KEYS[(KEYS.indexOf(variant) + KEYS.length - 1) % KEYS.length]);
+document.getElementById('next').onclick = () => setVariant(KEYS[(KEYS.indexOf(variant) + 1) % KEYS.length]);
+addEventListener('keydown', e => { if (e.target.closest('input,textarea,[contenteditable]')) return; if (e.key === 'ArrowLeft') document.getElementById('prev').click(); if (e.key === 'ArrowRight') document.getElementById('next').click(); });
+addEventListener('resize', () => render());
+
+function showInspect(info) {
+  closeInspect();
+  const el = document.createElement('div'); el.className = 'inspect'; el.id = 'inspect';
+  el.innerHTML = `<button class="x" aria-label="Close">×</button><h4><img src="${info.img}" alt="">${info.n}</h4><p>${info.d}</p>${info.html || ''}`;
+  el.querySelector('.x').onclick = closeInspect; document.body.appendChild(el);
+  document.querySelectorAll('.sq.sel').forEach(s => s.classList.remove('sel'));
+}
+function closeInspect() { document.getElementById('inspect')?.remove(); }
+
+function responseWindow() {
+  const el = document.createElement('div'); el.className = 'resp'; el.id = 'resp';
+  el.innerHTML = `<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><b>Response window</b><span class="muted" style="font-size:12px">Bo's Clash · Exchange 2</span></div>
+    <div class="vs"><div><img class="px" src="${ASSETS.hero0}" width="36" height="36" alt=""><br><span class="die glow" style="--c:#1e88e5"><span>4</span></span> + STR 3 = <b>7</b><br><span class="muted" style="font-size:12px">Bo · Fight</span></div><b class="muted">vs</b><div><img class="px" src="${ASSETS.skeleton}" width="36" height="36" alt=""><br><span class="die d8"><span>6</span></span> = <b>6</b><br><span class="muted" style="font-size:12px">Skeleton · d8★</span></div></div>
+    <div class="muted" style="font-size:12px;margin-bottom:8px">Bo is winning by 1. You have <b>2 Sway</b> and <b>Lucky Knucklebone</b> (only for your own rolls). Bo has 1 Resist.</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" data-r="Sway −1 on Bo's die (it's a tie)">Sway: Bo's die −1</button><button class="btn" data-r="Sway +1 on the Skeleton's die">Sway: Skeleton +1</button><button class="btn primary" data-r="Pass">Pass</button></div>
+    <div class="countdown"><i></i></div></div>`;
+  el.addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (b) { el.remove(); toast(`You chose: ${b.dataset.r}`); } });
+  document.body.appendChild(el);
+  setTimeout(() => { if (document.getElementById('resp') === el) { el.remove(); toast('Window closed after 8 seconds (auto-pass).'); } }, 8000);
+}
+function toast(msg) { showInspect({ img: ASSETS[S.me.hero], n: 'Response', d: msg }); }
+function slap() {
+  if (Date.now() < slapReadyAt) return;
+  slapReadyAt = Date.now() + 1500;  // push-poker's server cooldown; Glove of Slapping would halve it
+  const p = document.createElement('div'); p.className = 'pow'; p.textContent = 'SLAP!'; document.body.appendChild(p); setTimeout(() => p.remove(), 900);
+  const r = document.getElementById('root'); r.classList.remove('shake'); void r.offsetWidth; r.classList.add('shake');
+  tickSlap();
+}
+function tickSlap() {
+  const left = slapReadyAt - Date.now();
+  document.querySelectorAll('[data-slap]').forEach(b => { b.disabled = left > 0; b.querySelector('.cd').style.setProperty('--p', left > 0 ? `${(left / 1500) * 100}%` : '0%'); });
+  if (left > 0) requestAnimationFrame(tickSlap);
+}
+
+document.addEventListener('click', e => {
+  const t = e.target;
+  const sq = t.closest('.sq'); if (sq) { const info = describe(sq.dataset.xy); showInspect(info); sq.classList.add('sel'); return; }
+  const it = t.closest('[data-item]'); if (it) { const s = S.me.slots[+it.dataset.item]; showInspect({ img: ASSETS[s.k], n: s.n, d: s.d + (s.ch ? ` Charges: ${s.ch}.` : '') }); return; }
+  const tr = t.closest('[data-trinket]'); if (tr) { const s = S.me.trinkets[+tr.dataset.trinket]; showInspect({ img: ASSETS[s.k], n: s.n, d: s.d }); return; }
+  if (t.closest('[data-go]')) { const o = OPTIONS.find(o => o.dir === t.closest('[data-go]').dataset.go); showInspect({ img: ASSETS[S.me.hero], n: o.pivot ? 'Go east · 1 Pivot' : 'Go north · free', d: o.pivot ? 'You would spend your last Pivot here. With 2 steps left, any further Bend would make you Lost unless you drink Twirlwater.' : 'Straight on along your Heading. Next square has 2 Gold; the Goblin sits diagonally, so you would pass it.' }); return; }
+  const pl = t.closest('[data-player]'); if (pl) {
+    const i = +pl.dataset.player, p = i === 0 ? null : S.others[i - 1];
+    if (!p) { window.__drawerC = 'me'; render(); return; }
+    showInspect({ img: ASSETS[p.hero], n: `${p.name}${p.offline ? ' (offline)' : ''} · ${p.score} pts`, d: `${p.level} · HP ${p.hp}.`,
+      html: `<p style="margin-top:6px"><b>Stats</b> ${p.stats}</p><p style="margin-top:4px" class="muted"><b>Pack & items</b> hidden: you only find out by Shaking them down.</p>${p.offline ? '<p style="margin-top:6px"><button class="btn" data-skip style="background:#ddd;color:#111">Skip their Turn</button></p>' : ''}` });
+    return; }
+  const inf = t.closest('[data-info]'); if (inf) {
+    const k = inf.dataset.info;
+    if (k === 'turn') showInspect({ img: ASSETS[S.me.hero], n: 'Your Turn · Roll & move', d: 'A Turn runs Start (refresh Pivots, Sway, Resist) › Prepare (use items) › Roll & move (step along the path; choose at junctions) › After moving (Clash, Shakedown or Town Errands) › End. You are mid-move at a T-junction.' });
+    if (k === 'dice') showInspect({ img: ASSETS[S.me.hero], n: 'Rolled 4 (1d6)', d: 'You must move the whole roll: 2 of 4 steps taken, 2 left. After that you may add up to 3 optional DEX squares.' });
+    if (k === 'doom') showInspect({ img: ASSETS.skull, n: 'Doom Track · Round 7 of 18', d: 'One step per Round. When it fills, the game ends even if nobody has slain the Guardian. Then the Round finishes and points are counted.' });
+    return; }
+  if (t.closest('[data-demo-resp]')) { responseWindow(); return; }
+  if (t.closest('[data-slap]')) { slap(); return; }
+  if (t.closest('[data-skip]')) { showInspect({ img: ASSETS.hero4, n: 'Skip Eli?', d: 'Eli is offline. Anyone can skip an offline Player\'s Turn so the table keeps moving.' }); return; }
+  const ta = t.closest('[data-taba]'); if (ta) { window.__tabA = ta.dataset.taba; render(); return; }
+  const tb = t.closest('[data-tabb]'); if (tb) { window.__tabB = tb.dataset.tabb; render(); return; }
+  const dr = t.closest('[data-drawer]'); if (dr) { window.__drawerC = dr.dataset.drawer; render(); return; }
+  if (t.closest('[data-close]')) { window.__drawerC = null; render(); return; }
+});
+render();
+</script>
+</body>
+</html>
