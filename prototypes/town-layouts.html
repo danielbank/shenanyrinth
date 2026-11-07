@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PROTOTYPE · Shenanyrinth Town layouts</title>
+<!-- Plan: three structurally different 5x5 Town layouts, switchable via ?variant=A|B|C (bottom bar or ←/→), each shown for 2–6 Players with a per-Keep fairness readout. Throwaway. -->
+<style>
+  :root { --bg:#f4f1ea; --ink:#222; --mute:#6b6b6b; --line:#ddd6c8; --accent:#7a3fd1; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; background:var(--bg); color:var(--ink); padding-bottom:90px; }
+  .banner { background:#222; color:#fff; padding:6px 16px; font-size:13px; }
+  .wrap { max-width:980px; margin:0 auto; padding:16px; }
+  h1 { font-size:21px; margin:10px 0 2px; }
+  .sub { color:var(--mute); margin:0 0 12px; }
+  .counts { display:flex; gap:6px; flex-wrap:wrap; margin:10px 0 14px; align-items:center; }
+  .counts button { font:inherit; padding:6px 12px; border-radius:999px; border:1px solid var(--line); background:#fff; cursor:pointer; }
+  .counts button.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .cols { display:grid; grid-template-columns:auto minmax(0,1fr); gap:20px; align-items:start; }
+  @media (max-width:1100px){ .cols { grid-template-columns:minmax(0,1fr); } }
+  .tscroll { overflow-x:auto; }
+  .wall { width:max-content; margin:0 auto; padding:calc(var(--t) / 2); background-image:var(--brick); background-size:calc(var(--t) / 2) calc(var(--t) / 2); image-rendering:pixelated; border:3px solid #3b2b2b; border-radius:4px; --t:48px; }
+  @media (max-width:760px){ .wall { --t:32px; } }
+  .town { display:grid; grid-template-columns:repeat(5, var(--cell)); grid-template-rows:repeat(5, var(--cell)); --cell:calc(var(--t) * 2); width:max-content; margin:0 auto; background:#5f8f4e; }
+  
+  .sq { position:relative; width:var(--cell); height:var(--cell); display:grid; grid-template-columns:repeat(2,var(--t)); grid-template-rows:repeat(2,var(--t)); }
+  .sq .tile { position:relative; width:var(--t); height:var(--t); }
+  .sq .tile img { position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; }
+  .sq > img.over { position:absolute; width:var(--t); height:var(--t); image-rendering:pixelated; left:calc(var(--t) / 2); top:calc(var(--t) / 2); }
+  .sq > img.sign { position:absolute; width:calc(var(--t) * .7); height:calc(var(--t) * .7); image-rendering:pixelated; left:calc(var(--t) * .65); top:calc(var(--t) * .12); background:#f6e7c8; border:2px solid #3b2b2b; border-radius:3px; padding:1px; z-index:1; }
+  .sq .lbl { position:absolute; left:0; right:0; bottom:1px; text-align:center; font:700 10px/1 system-ui; z-index:2; color:#fff; text-shadow:0 0 2px #000,0 0 2px #000; pointer-events:none; }
+  .sq .flag { position:absolute; top:3px; left:calc(var(--t) * .85); width:4px; height:calc(var(--t) * .6); background:#3b2b2b; z-index:1; }
+  .sq .flag::after { content:''; position:absolute; left:4px; top:0; width:calc(var(--t) * .45); height:calc(var(--t) * .32); background:var(--fc); border:2px solid #3b2b2b; border-left:0; }
+  .sq .vaults { position:absolute; left:2px; right:2px; top:calc(var(--t) * .2); z-index:1; display:flex; flex-wrap:wrap; gap:2px; justify-content:center; }
+  .sq .vaults i { width:10px; height:10px; border-radius:2px; border:1px solid #fff; box-shadow:0 0 0 1px #000; }
+  .panel { background:#fff; border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:14px; }
+  .panel h2 { font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--mute); margin:0 0 8px; }
+  table { border-collapse:collapse; width:100%; font-size:14px; }
+  th,td { text-align:left; padding:5px 6px; border-bottom:1px solid var(--line); }
+  .sw { display:inline-block; width:12px; height:12px; border-radius:3px; vertical-align:-1px; margin-right:6px; border:1px solid #0003; }
+  .verdict { font-weight:600; }
+  .ok { color:#2e7d32; } .warn { color:#c77700; }
+  .legend { display:flex; flex-wrap:wrap; gap:10px 16px; font-size:13px; color:var(--mute); }
+  .legend span { display:inline-flex; align-items:center; gap:6px; }
+  .legend img { width:24px; height:24px; image-rendering:pixelated; }
+  .switcher { position:fixed; left:50%; bottom:calc(16px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); display:flex; align-items:center; gap:10px; background:#111; color:#fff; padding:8px 12px; border-radius:999px; box-shadow:0 6px 20px #0005; z-index:10; font-size:14px; }
+  .switcher button { background:#333; color:#fff; border:0; width:34px; height:34px; border-radius:50%; font-size:18px; cursor:pointer; }
+  .switcher .name { min-width:190px; text-align:center; }
+</style>
+</head>
+<body>
+<div class="banner">PROTOTYPE · throwaway · Town layouts for the Shenanyrinth design map. Switch variants with the bar at the bottom or the ←/→ keys.</div>
+<div class="wrap">
+  <h1 id="title"></h1>
+  <p class="sub" id="pitch"></p>
+  <div class="counts" id="counts"><b style="margin-right:4px">Players:</b></div>
+  <div class="cols">
+    <div>
+      <div class="wall" id="wall"><div class="town" id="town"></div></div>
+      <div class="legend" style="margin-top:12px;justify-content:center" id="legend"></div>
+    </div>
+    <div>
+      <div class="panel"><h2>Fairness per Keep</h2><div id="fair"></div>
+        <p style="font-size:13px;color:var(--mute);margin:8px 0 0">Town movement is free: up to 1d6 (+ optional DEX) squares in any non-diagonal direction, and you use any building just by passing through it. <b>Gate</b> and <b>Store</b> are distances to the nearest one, in squares. The average roll with no DEX is 3.5. <b>Loop</b> is the errand loop: come in through the best Gate → your Keep (Deposit, heal) → all 4 stores → leave by the best Gate, taking the shortest order.</p>
+      </div>
+      <div class="panel"><h2>What to notice</h2><div id="notes"></div></div>
+    </div>
+  </div>
+</div>
+<div class="switcher"><button id="prev" aria-label="Previous variant">←</button><div class="name" id="vname"></div><button id="next" aria-label="Next variant">→</button></div>
+
+<script>
+const TILES = {"0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAB1JREFUOI1jbDmW+Z+BAsBEieZRA0YNGDVgMBkAADGOAtL5/cdYAAAAAElFTkSuQmCC", "1": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAgMAAABinRfyAAAABGdBTUEAALGPC/xhBQAAAAlQTFRFi9h9ZaVWhMZpfk5vCQAAADJJREFUCNdjWAUEDAuaYMTSaUBiVRaIAEmsWpYFJFbCuUjEgiaGmSBi2aql00BiWWAJAFxUKK1jXEsRAAAAAElFTkSuQmCC", "2": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRF////44YoZaVW/b5ThMZpiQPwCAAAAEpJREFUCNdNjdEJQCEMAwNvBFfoAApOELP/TKY+UfPTg4QrtAON7hMBlWagMOrXV3WApcUzTmBsOJ6M6x/sWpCKC6Qf2AXFO7ZrAoI2Hifwpi13AAAAAElFTkSuQmCC", "5": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAgMAAABinRfyAAAABGdBTUEAALGPC/xhBQAAAAxQTFRFAAAAR59KhMZpPyYxgawHvQAAAAF0Uk5TAEDm2GYAAABXSURBVAjXHcarDYAwAEXRmzBAR+oUDQmmHoboHhgUgmc6AizBELiaIpryC+bkgEnA80BzhQ1zDAkjJaxUuaWVIkVK9zNGzkUTuV882blvbvZcbg7Yva0vvlAmggrmYVsAAAAASUVORK5CYII=", "16": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAABJQTFRFAAAAvWxK6qVshMZpR59KPyYxx2fPCgAAAAF0Uk5TAEDm2GYAAABMSURBVAjXY2ANNXExNg4NYGANMTExNnYFM1ygDGNjMCMUzjBxNjY2AYu4AAFYDQYjFMQAGsgQCmSFhjIwAIUCRUECQFaQKpjGwoAAADEaGSPbFoGXAAAAAElFTkSuQmCC", "28": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRFAAAAvWxKhMZpR59KPyYx59IpKwAAAAF0Uk5TAEDm2GYAAABOSURBVAjXVc3BDYAwDAPAPDoCE5hO0DBACd5/JkJckPDrZEeKmRlplUbOAqOrIkAtiWdrAe8/MIC65sDYFyA44EJG04uvudwP1otzyxc3W0URVJw+qQQAAAAASUVORK5CYII=", "29": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAABVQTFRFAAAA/3BtvWxK6qVs////6EU3PyYxJrjr2gAAAAF0Uk5TAEDm2GYAAABOSURBVAjXY2DABGlpaWCaDchIAAukhoaBhdJEQwIhjNDQULCyNJdQV7AyICM0LRWoDCwl6ghkpCmlATlpQHOMIQwGECNJDWp6slkCpt0A808Zk5WzH6cAAAAASUVORK5CYII=", "43": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAgMAAABinRfyAAAABGdBTUEAALGPC/xhBQAAAAlQTFRFZaVWwMvchMZpm2LDeQAAAEhJREFUCNdjWAUEDKtmgYiVkUCCM2IVwzLOyCyGVSs4kxiWpkatAhKRURBigSqQmJm1gothZYLqLIZVC1SBOhIUgITWMiABBAAKFR+x5SMovgAAAABJRU5ErkJggg==", "48": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAgMAAABinRfyAAAABGdBTUEAALGPC/xhBQAAAAxQTFRFwMvci5u0PyYxWmmIJXX2cQAAAEVJREFUCNdjWAUEDGBiAQMQLA0NDWVY////f4al/7+XA4m/3xmWgFiL///5DJFYezccqKQWSKy9EyzCsN6e/zBUx9XycgCAeSoLkrDq7gAAAABJRU5ErkJggg==", "50": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAgMAAABinRfyAAAABGdBTUEAALGPC/xhBQAAAAxQTFRFwMvcPyYxi5u0WmmIFKu6DAAAAEpJREFUCNdjCAUCBjABBKwMq1atWsrw////rwyrXu3eCiT2fWXQOGW9leHwhz9fIRLv3q1eyvB+H5B492axKsN5e/6jUB3/f28FAOsEKv73gsjjAAAAAElFTkSuQmCC", "84": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAABJQTFRF6qVsi5u0wMvcdjs2PyYxvWxKfp3NJAAAAENJREFUCNdjCIUChlAXMAhlCIEwXBlCnEESJkCGqzEQhIAYRspGyhCGahAaw1A0UBgrgwWi3YGBBWKgA8IKuKUwZwAAmAchvaQtiHkAAAAASUVORK5CYII=", "85": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRFi5u0djs2vWxKPyYx6qVsqdCZjgAAAD9JREFUCNdjUIICBiUXMFBiUIEwnBhcnI2BwMSFwcUYDEAMISUlRTBDUVBQiCCDAYNhDGYoQdQoITNAjjBWAgCmlRXarH22BQAAAABJRU5ErkJggg==", "52": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAABJQTFRF/LyPi5u0wMvc8oRiPyYxw0s1wzQn5gAAAE1JREFUCNdNisEJwDAMAwXFA3SFThAw3sADGIT3X6UCpzT3EMch5Aa/PAPyHpA9IF0bESNsyfqKSartOJP0cFeJLWS5XUvFGl3n2XURL66zH2wErFWhAAAAAElFTkSuQmCC", "54": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAABJQTFRFi5u0wMvc/LyP8oRiPyYxw0s1vW2HtgAAAE5JREFUCNdVjMEJwDAMA71CV2jIAhXewBPYaP9VqiamtPfxIQ5bNPbKsQlrwrgJAwru3lJaxpWYz5KTJ5OfuAQcEnpLleqhmKv+fdbRnxsi7B9BvLi6jgAAAABJRU5ErkJggg==", "88": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRFwMvcdjs2vWxKi5u0PyYx85lMdgAAAENJREFUCNdjMIYCBmMXMDBmMIEwnBlMHJWAQATIcBIEAhUQQ4BRgBHCYFJAYwgbKRtiZbBAtDswsEAMdEBYAbcU5gwAiw4XULDSmQgAAAAASUVORK5CYII=", "89": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRFvWxKi5u0djs2PyYxwMvcKfco4QAAAD9JREFUCNdjEIQCBkEXMBBkEIEwHBlcnI2BwMSFwcUYDEAMBQYGJjCDSUlJgSBDEINhDGYIQtQIIjMYgMBYEAA1EhRkBG0FBQAAAABJRU5ErkJggg==", "63": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAABVQTFRF6qVsdjs2vWxKPyYxwMvcWmmIi5u0O5CCXQAAAG5JREFUCNcdyMERgzAMRNFNB4GhAdyCMA0guwEj3T3Y238JEfmnNx+kP9ltoo5bZM6JuzSRwwrM5LjEDN6EKnnC5KTGQgyvsdBOso4rQKcOzfDpfVMtAa67jgB7Stt7+AU+LzqirYBrivaKJf1bfl4JIMMMx2JlAAAAAElFTkSuQmCC", "51": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAgMAAABinRfyAAAABGdBTUEAALGPC/xhBQAAAAxQTFRFwMvci5u0WmmIPyYxTNX3OQAAAEZJREFUCNdj+A8EDGACDML//7/KsP7//18M+QwM3xjyRUOAhFrKNwZ9yRmfGNYzMAAlQkOBYkuBhH5YFFAsNPQXwyogABMAFiMlSQ4g544AAAAASUVORK5CYII=", "73": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAgMAAABinRfyAAAABGdBTUEAALGPC/xhBQAAAAlQTFRFdjs26qVsvWxK/+ENAwAAACNJREFUCNdjWAUEDGBigRaIUIBxV4XBCSa4GJwIBQIIgSoBAOj3JWsnI7CIAAAAAElFTkSuQmCC", "67": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAABVQTFRFwMvcWmmIi5u0PyYx/LyPw0s18oRiT1V7eAAAAG5JREFUCNcdyMERgzAMRNFNB4GhAdyCMA0guwEj3T3Y238JEfmnNx+kP9ltoo5bZM6JuzSRwwrM5LjEDN6EKnnC5KTGQgyvsdBOso4rQKcOzfDpfVMtAa67jgB7Stt7+AU+LzqirYBrivaKJf1bfl4JIMMMx2JlAAAAAElFTkSuQmCC", "55": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAABVQTFRF/LyP8oRiWmmIwMvci5u0w0s1PyYxl40NwQAAAFJJREFUCNc9ikERwDAIBPkgIQbSKGijgN7UAQ46+JcQIEz2tTe3ZAUdeQrCF/sH6X6UmsVhzWUCb8otEsI2x7iMPc4mYjjZ9C1sEPRs8lLS4sgCrXEksFPGQxYAAAAASUVORK5CYII=", "77": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAgMAAABinRfyAAAABGdBTUEAALGPC/xhBQAAAAlQTFRFWmmIwMvci5u0QDQsVwAAACNJREFUCNdjWAUEDGBigRaIUIBxV4XBCSa4GJwIBQIIgSoBAOj3JWsnI7CIAAAAAElFTkSuQmCC", "96": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRFAAAAWmmIi5u0PyYxwMvcwCcfDAAAAAF0Uk5TAEDm2GYAAABMSURBVAjXTcrRCYBADAPQgBPc4QKWbtAuoGb/mbxcKZj8PNICUcHRiHx3EbxPdeGaKsIqiNFgUhGM9AVLe1zLSBZ+P14wLV4/fdr4ALuuGbY/O1EMAAAAAElFTkSuQmCC", "98": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRFAAAAWmmIi5u0PyYxwMvcwCcfDAAAAAF0Uk5TAEDm2GYAAABESURBVAjXYzCGAAYGKMOAwdkEDI0ZHEVA0MWYQVEIBIEMJQiAMQSNGVxAwNkFjeHkrARmOLk4o6tRQjCUYFKCMF0uxgAckBsXbILL3gAAAABJRU5ErkJggg==", "120": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAgMAAABinRfyAAAABGdBTUEAALGPC/xhBQAAAAxQTFRFWmmIi5u0PyYxwMvcusDPFwAAAD1JREFUCNdjWL///3+GpSBiAYhYDyeQxLb//wsUq4eJrVq1imH969evGdYfPnyYYamjoyPD0tDQUIaFQAIAH6gvJUw8oBMAAAAASUVORK5CYII=", "125": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRFJitEwMvcUmB8PyYxi5u0ajz6IwAAAFZJREFUCNdFzdENwCAIBFA+ugBxA+wCUAdo9PafSY42LV8vch5i7wiAU3UiceUQiwiI9aG6wkSXA801V34fbeCHdSIzz0vUKsOF+s5MFbKHYM/kWeDDBrRAGLa2j11mAAAAAElFTkSuQmCC", "12": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRF/smcz4JUZaVWhMZp6qVsl6jXnAAAAD1JREFUCNdjMIYCBmSGkZKykRKQYaTi4qTiAmSouACBCJDhAgYMxkYwhgmcIYIh4sACYSjDGM6OIji1QxgAznEc8FXlPHcAAAAASUVORK5CYII=", "14": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRF/smcz4JUZaVWhMZp6qVsl6jXnAAAAD1JREFUCNdjMIYCBjhDSdlISRnEcHFScXECshgcXYDACSQCBnCGMozhDGU4OqOJOLDAGUYQhqOICU7tQAYADDUdpJyMt8sAAAAASUVORK5CYII=", "36": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRFZaVW/smcz4JUhMZp6qVsxgIKiQAAADZJREFUCNdjMDZxAQMGBIMZxnCGMQwcRaBq4AwnFTRdJk5QhrELBgOsSAXIALKcTUAiEIDJAACSyB2m7RBUiAAAAABJRU5ErkJggg==", "38": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRF/smcZaVWz4JUhMZp6qVsu52zmAAAADFJREFUCNdjcAEDZ2MGNIYhjGECYTipCMMYGIodMLUbIzGcIDJAEWcTEG3MYAwFmAwA5D8egOHoGkgAAAAASUVORK5CYII=", "103": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAB5QTFRFAAAAUmB8djs2i5u06qVsWmmIvWxKJitEwMvcPyYx7W5AMgAAAAF0Uk5TAEDm2GYAAABESURBVAjXY+CcCQYTGGZCAcPMZmMgsAAyWkOBIAKZ0e5SXu5SgcJIc3FJgzDUkqCM8vI0QlJKQABiWHQAQTOQIQgGMwGEPjgNVWt6+AAAAABJRU5ErkJggg==", "115": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAABJQTFRFAAAA6qVsUmB8jJy1vWxKPyYxgIpNTAAAAAF0Uk5TAEDm2GYAAABGSURBVAjXY2BgYAgNZWAAUyDAwMAaGhriGhoawBAabKziZGwayhBqDGIYgxihgaKhIAZEDRIDqC/ENQBsEGkMkE1Q+4EEAIjBF1BHeaL4AAAAAElFTkSuQmCC", "131": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAABtQTFRFAAAAi5u0UmB8duT/AJrcwMvcdzgzvWxKPyYx+mcXxAAAAAF0Uk5TAEDm2GYAAABfSURBVAjXY2Dg6ACCBgYGhg4wYAAKhCoKhQKFOlpBAhEdDB0R5UDQCmSEl6WlpZeCGMnGxmZgRoqLixuYUeLi4g5itIEUZ3QwcLSnAUFFA5ABEkFhdIAYIFthlsKcAQB1KzO8O3VT5QAAAABJRU5ErkJggg==", "128": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAABhQTFRFAAAAdjs2vmxJwczd6UM0wMvcjJy1PSEtuIfzowAAAAF0Uk5TAEDm2GYAAABOSURBVAjXY2BgKAcCBiBgBzEKgIzy0tDQcJBQeSgQgBlhaWmpYEYaEEAYyWZojPJCcbBB7OVF6mBzGEAMBjDDxQXKcC9BF4HaDrIeqAkAyL4gNu7WQo0AAAAASUVORK5CYII=", "95": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAABVQTFRFAAAAvWxK/3Bt6qVs////6EU3PyYxEVmoHQAAAAF0Uk5TAEDm2GYAAABMSURBVAjXY2DAAtKAAESzgRgJIIEkJSU1kFCaamhoEJgR6uISCmaEhIa6QhghrugMmBRccWpoaBiIwZYoligGMpkt2VDYDMIwSwYyAHACGZKxmHjyAAAAAElFTkSuQmCC", "83": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRFAAAAdjs26qVsvWxKPyYxWHQ6vwAAAAF0Uk5TAEDm2GYAAABMSURBVAjXY2BAAi4uUAoEGBhYXFycVFxcHBhYnJSUjZRUwAwgADGcjYHABMQwNBQUNkEVERRGFXFxcRQBmQM02dkEYgmLM1AChQEBABzPEe8EXSXBAAAAAElFTkSuQmCC", "86": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRFi5u06qVsPyYxdjs2vWxKd/UJHAAAAD1JREFUCNdjcIECBhdHQTBgcBGEMhwFlcCAwVEIzlAGqXUCMlSMgYAww4DZiUEQhWGk7MTg4gRVg8wAmwwAJgQXBPix7M8AAAAASUVORK5CYII=", "87": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRFi5u06qVsPyYxdjs2vWxKd/UJHAAAAD1JREFUCNdjcIECBkEwEIExBF0YlMBAUATKUBRhUAGpNAIxjIHAiQDDgBmFIcigYqQMZYDVqLggMUAmAxkAuFEVjSWN1msAAAAASUVORK5CYII=", "90": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRFvWxKi5u0wMvcPyYxdjs234IUnAAAAD1JREFUCNdjEIQCBkEhJTBgEFSCMoSUjMGAQUgZzjBhAAJmIMPABQgIMxxFmBmUUBjOJswMgsJQNcgMsMkAEOQSxjSbmjkAAAAASUVORK5CYII=", "91": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRFvWxKi5u0wMvcPyYxdjs234IUnAAAAD5JREFUCNdjEIQCBiUwUIQxlAQZjMFASRHKMFJkMGAAAmcQwwUImAkwHEVQGEoMBs4mUAZYjaEgEgNkMpABAIUqFGoMtgNLAAAAAElFTkSuQmCC", "99": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRFAAAAWmmIwMvci5u0PyYxSeeP1AAAAAF0Uk5TAEDm2GYAAAA6SURBVAjXY2BxgQAGFzhDycVJBQiBDEEhRSBkcDEWFDYEQiADAhhcBGEMJSclEEBiGMMYgqQYCGUAAPfhGAv5gewQAAAAAElFTkSuQmCC", "102": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRFAAAAWmmIi5u0wMvcPyYxW0EJwgAAAAF0Uk5TAEDm2GYAAAA+SURBVAjXY2BxAQMHBhcoYHAxdjEGIhBD0BiIgAwlQSUgAjKANJAFkgIxwGqcjY1NsDMEQcYJ4jdQCQwQDAB1oRlwaZH43AAAAABJRU5ErkJggg==", "111": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRFAAAAUmB8wMvci5u0JitEqzeITQAAAAF0Uk5TAEDm2GYAAABaSURBVAjXJczRFcAgCANAVvDhBNEF2jhAtdl/pkabHw4Qo5yQQTLBoQ26HshBlHSrCwFq9TS8B3I/HguQahSjT3VPJrQO3vpD78ibLVK+25Om87PPjWdjGOF8sZAYkVUlPCsAAAAASUVORK5CYII=", "114": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAAA9QTFRFAAAAUmB8wMvci5u0JitEqzeITQAAAAF0Uk5TAEDm2GYAAABXSURBVAjXLcrBDcAgDEPRHFgA0QmsLpCaBQref6YaqE9PyQ+y7oUmG5AMWaQBeRvNmFmNHLcIxwm4cyzgNqxh1IgowrUuvr39oMyuH1RuiHpiRzyvhfkBMngUY+vXApEAAAAASUVORK5CYII=", "126": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAgMAAABinRfyAAAABGdBTUEAALGPC/xhBQAAAAlQTFRFwMvcUmB8i5u0Ok/JaAAAAC5JREFUCNdjCAUChlVLQ6OgxLJVsxjAYpyrljEwrATyIQRYLDSMYSqQWDUVpzoArEYe3Z77avAAAAAASUVORK5CYII="};
+const COLORS = ['#e53935','#1e88e5','#43a047','#fdd835','#8e24aa','#fb8c00'];
+const STORES = { B:['Blacksmith','smith'], A:['Apothecary','apoth'], R:['Arcanist','arcane'], G:["Adventurer's Guild",'guild'] };
+
+// ---- Layout data: pure, liftable. (x,y) on a 5x5 grid. ----
+const VARIANTS = {
+  A: { name:'Plaza', pitch:'The four buildings ring a central plaza. A Gate sits at the middle of each edge. Keeps go on the edge squares between them, which are all equivalent by symmetry, so every seat is identical at every Player count.',
+       plaza:[[2,2]], stores:{ B:[1,1], A:[3,1], R:[1,3], G:[3,3] }, stairs:[[2,0],[4,2],[2,4],[0,2]],
+       keeps:{ 2:[[1,0],[3,4]], 3:[[1,0],[4,3],[0,3]], 4:[[1,0],[4,1],[3,4],[0,3]], 5:[[1,0],[3,0],[4,3],[1,4],[0,1]], 6:[[1,0],[3,0],[4,3],[3,4],[1,4],[0,1]] },
+       notes:['Every Keep is exactly 1 square from a Gate and 1 from a store, at every Player count.','The busiest crossroads is the plaza: every route passes the stores.','The corners stay empty for decoration such as trees and a well.','Downside: it looks symmetric and a bit "board-gamey" rather than like a real town.'] },
+  B: { name:'Market Row', pitch:'One main street through the middle holds all four buildings. The Gates are in the four corners. Keeps line the top and bottom rows, like houses facing the market.',
+       plaza:[[2,2]], stores:{ B:[0,2], A:[1,2], R:[3,2], G:[4,2] }, stairs:[[0,0],[4,0],[0,4],[4,4]],
+       keeps:{ 2:[[2,0],[2,4]], 3:[[1,0],[3,0],[2,4]], 4:[[1,0],[3,0],[1,4],[3,4]], 5:[[1,0],[2,0],[3,0],[1,4],[3,4]], 6:[[1,0],[2,0],[3,0],[1,4],[2,4],[3,4]] },
+       notes:['It reads like a real town: houses, a market street, and Gates at the corners.','At 2, 3, 5 and 6 Players the middle Keeps (column 2) are 1 square further from the Gates, so their errand loop is 2 squares longer (about half a Turn).','Errands mean walking the whole street (4 squares), about one Turn on its own.','Rows 1 and 3 are just grass, which wastes space on a 5×5 board.'] },
+  C: { name:'Keep Hall', pitch:'Every Keep lives in one central building, the Keep Hall, with one vault per Player. The four buildings sit at the edge midpoints and the Gates in the corners. It\'s the same layout for any Player count, so there\'s nothing to design per count.',
+       plaza:[], hall:[2,2], stores:{ B:[2,0], A:[4,2], R:[2,4], G:[0,2] }, stairs:[[0,0],[4,0],[0,4],[4,4]],
+       keeps:{ 2:'hall', 3:'hall', 4:'hall', 5:'hall', 6:'hall' },
+       notes:['It\'s perfectly fair by construction, because everyone shares one Keep square.','It answers "can a Keep share a square?" with "yes, they all do". Players stand together on the Hall, but the Town is a safe zone, so no Shakedowns happen there.','There\'s no per-Player-count layout to maintain, which is simplest to build.','The errand loop is long: 20 squares, about 6 Turns, because the Hall sits far from the corner Gates and the stores are spread to the edges.','You lose the personal "this is my house" feel, and a Player\'s colour no longer marks a spot on the map.'] },
+  D: { name:'Keep Hall (compact)', pitch:'The same idea as C: one shared Keep Hall in the centre and one layout for every Player count. Here the four buildings huddle around the Hall in a plus, and a Gate leads straight out from each building at the middle of each edge. Trips get much shorter.',
+       plaza:[], hall:[2,2], stores:{ B:[2,1], A:[3,2], R:[2,3], G:[1,2] }, stairs:[[2,0],[4,2],[2,4],[0,2]],
+       keeps:{ 2:'hall', 3:'hall', 4:'hall', 5:'hall', 6:'hall' },
+       notes:['It keeps everything from C: one shared Hall, perfectly fair, and no per-Player-count layouts.','The errand loop drops from 20 squares (about 6 Turns) to 10 (about 3). A typical trip, Gate → Hall → one store → Gate, is just 4 squares, about 1 Turn.','It reads as a compact town square: a Hall ringed by shops, with roads out to the four Gates in the city wall.','The four corners are free for scenery.'] },
+};
+
+const dist = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
+function perms(a) { return a.length <= 1 ? [a] : a.flatMap((x, i) => perms([...a.slice(0, i), ...a.slice(i + 1)]).map(p => [x, ...p])); }
+function keepStats(v, k) {
+  const stores = Object.values(v.stores);
+  const nearestStairs = Math.min(...v.stairs.map(s => dist(s, k)));
+  const nearestStore = Math.min(...stores.map(s => dist(s, k)));
+  let best = Infinity;
+  for (const inS of v.stairs) for (const order of perms(stores)) for (const outS of v.stairs) {
+    let d = dist(inS, k), cur = k;
+    for (const s of order) { d += dist(cur, s); cur = s; }
+    d += dist(cur, outS); best = Math.min(best, d);
+  }
+  return { nearestStairs, nearestStore, loop: best };
+}
+function keepsFor(v, n) { return v.keeps[n] === 'hall' ? Array.from({ length: n }, () => v.hall) : v.keeps[n]; }
+
+// ---- Throwaway page shell ----
+const params = new URLSearchParams(location.search);
+let variant = VARIANTS[params.get('variant')] ? params.get('variant') : 'A';
+let players = Number(params.get('players')) || 4;
+const KEYS = Object.keys(VARIANTS);
+
+function img(src, cls = '') { return `<img src="${src}" class="${cls}" alt="">`; }
+function render() {
+  const v = VARIANTS[variant];
+  document.getElementById('title').textContent = `Variant ${variant}: ${v.name}`;
+  document.getElementById('pitch').textContent = v.pitch;
+  document.getElementById('vname').textContent = `${variant} (${v.name})`;
+  const c = document.getElementById('counts');
+  c.querySelectorAll('button').forEach(b => b.remove());
+  [2,3,4,5,6].forEach(n => { const b = document.createElement('button'); b.textContent = n; b.className = n === players ? 'on' : ''; b.onclick = () => { players = n; sync(); }; c.appendChild(b); });
+
+  const keeps = keepsFor(v, players);
+  document.getElementById('wall').style.setProperty('--brick', `url(${TILES[126]})`);
+  const town = document.getElementById('town'); town.innerHTML = '';
+  const G = TILES, rnd = (x, y) => ((x * 73856093) ^ (y * 19349663)) >>> 0;
+  const grass = (x, y) => [0, 1, 0, 2, 0][rnd(x, y) % 5];
+  const BUILD = { keep:[[48,50],[84,85]], hall:[[48,50],[86,87]], B:[[52,54],[84,85]], A:[[52,54],[88,89]], R:[[48,50],[88,89]], G:[[52,54],[90,91]] };
+  for (let y = 0; y < 5; y++) for (let x = 0; x < 5; x++) {
+    const d = document.createElement('div'); d.className = 'sq';
+    const at = (p) => p[0] === x && p[1] === y;
+    const storeKey = Object.keys(v.stores).find(k => at(v.stores[k]));
+    const keepIdx = v.keeps[players] === 'hall' ? -1 : keeps.findIndex(at);
+    const isHall = v.hall && at(v.hall), isStairs = v.stairs.some(at), isPlaza = v.plaza.some(at);
+    let grid = null, extra = '';
+    if (isStairs) { grid = [[99,102],[111,114]]; extra = `<div class="lbl">Gate</div>`; }
+    else if (storeKey) { grid = BUILD[storeKey]; extra = `<img class="sign" src="${G[{B:115,A:131,R:128,G:95}[storeKey]]}" alt=""><div class="lbl">${STORES[storeKey][0].replace("Adventurer's ", '')}</div>`; }
+    else if (isHall) { grid = BUILD.hall; extra = `<div class="vaults">${keeps.map((_, i) => `<i style="background:${COLORS[i]}"></i>`).join('')}</div><div class="lbl">Keep Hall</div>`; }
+    else if (keepIdx >= 0) { grid = BUILD.keep; extra = `<span class="flag" style="--fc:${COLORS[keepIdx]}"></span><div class="lbl">Keep</div>`; }
+    const cells = [];
+    for (let ty = 0; ty < 2; ty++) for (let tx = 0; tx < 2; tx++) {
+      const layers = [G[grass(x * 2 + tx, y * 2 + ty)]];
+      if (isPlaza) layers.push(G[43]);
+      else if (grid) layers.push(G[grid[ty][tx]]);
+      else { const r = rnd(x * 2 + tx + 7, y * 2 + ty + 3) % 9; if (r === 0) layers.push(G[28]); else if (r === 1) layers.push(G[16]); else if (r === 2) layers.push(G[5]); }
+      cells.push(`<div class="tile">${layers.map(src => `<img src="${src}" alt="">`).join('')}</div>`);
+    }
+    d.innerHTML = cells.join('') + extra;
+    town.appendChild(d);
+  }
+
+  const rows = keeps.map((k, i) => ({ i, ...keepStats(v, k) }));
+  const loops = rows.map(r => r.loop), spread = Math.max(...loops) - Math.min(...loops);
+  document.getElementById('fair').innerHTML = `<div class="tscroll"><table><tr><th>Keep</th><th>Gate</th><th>Store</th><th>Loop</th><th>≈ Turns</th></tr>${
+    rows.map(r => `<tr><td><span class="sw" style="background:${COLORS[r.i]}"></span>P${r.i + 1}</td><td>${r.nearestStairs}</td><td>${r.nearestStore}</td><td>${r.loop}</td><td>${(r.loop / 3.5).toFixed(1)}</td></tr>`).join('')
+  }</table></div><p class="verdict ${spread === 0 ? 'ok' : 'warn'}">${spread === 0 ? 'Every seat is identical.' : `Seats differ by up to ${spread} square(s) on the errand loop, about ${(spread / 3.5).toFixed(1)} of a Turn.`}</p>`;
+  document.getElementById('notes').innerHTML = '<ul style="margin:0;padding-left:18px">' + v.notes.map(n => `<li>${n}</li>`).join('') + '</ul>';
+  document.getElementById('legend').innerHTML = [[111,'Gate (out to a Forest edge)'],[115,'Blacksmith'],[131,'Apothecary'],[128,'Arcanist'],[95,"Adventurer's Guild"],[63,'Keep (flag = Player colour)']]
+    .map(([t, l]) => `<span>${img(TILES[t])}${l}</span>`).join('');
+}
+function sync() {
+  const p = new URLSearchParams(location.search); p.set('variant', variant); p.set('players', players);
+  history.replaceState(null, '', '?' + p.toString()); render();
+}
+function step(d) { variant = KEYS[(KEYS.indexOf(variant) + d + KEYS.length) % KEYS.length]; sync(); }
+document.getElementById('prev').onclick = () => step(-1);
+document.getElementById('next').onclick = () => step(1);
+addEventListener('keydown', e => { if (e.target.closest('input,textarea,[contenteditable]')) return; if (e.key === 'ArrowLeft') step(-1); if (e.key === 'ArrowRight') step(1); });
+sync();
+</script>
+</body>
+</html>
