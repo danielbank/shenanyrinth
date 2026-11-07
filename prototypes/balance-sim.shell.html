@@ -1,0 +1,366 @@
+<!-- PROTOTYPE (throwaway) shell for issue #17 "Balance simulation". Built into balance-sim.html by build-balance-sim.sh -->
+<title>Shenanyrinth balance simulation</title>
+<meta charset="utf-8">
+<style>
+:root { --bg:#faf9f6; --panel:#fff; --ink:#1f2328; --muted:#646b73; --line:#e3e1dc; --accent:#7a4cc2; --accent-soft:#efe8fb; --good:#2f7d4f; --bad:#b23b3b; --warn:#a86b00;
+  --forest:#e8f1e4; --dungeon:#e9e6ef; --town:#f4efe4; --fog:#c9c6bf; color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#16181b; --panel:#1e2125; --ink:#e7e9ec; --muted:#9aa1a9; --line:#30343a; --accent:#b08cf0; --accent-soft:#2c2540;
+  --good:#6cc08d; --bad:#e07a7a; --warn:#e0b45c; --forest:#1f2b22; --dungeon:#25222d; --town:#2b2720; --fog:#3a3d42; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg:#16181b; --panel:#1e2125; --ink:#e7e9ec; --muted:#9aa1a9; --line:#30343a; --accent:#b08cf0; --accent-soft:#2c2540;
+  --good:#6cc08d; --bad:#e07a7a; --warn:#e0b45c; --forest:#1f2b22; --dungeon:#25222d; --town:#2b2720; --fog:#3a3d42; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 24px; margin: 0 0 6px; } h2 { font-size: 17px; margin: 24px 0 8px; } h3 { font-size: 14px; margin: 14px 0 6px; }
+p { margin: 6px 0; } .muted { color: var(--muted); } .q { max-width: 860px; }
+.tag { display:inline-block; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 600; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 18px 0 12px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+button { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+button:hover { border-color: var(--accent); } button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; } button:disabled { opacity: .5; cursor: default; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
+select, input[type=number], input[type=text] { font: inherit; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
+input[type=number] { width: 70px; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 4px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; } th { color: var(--muted); font-weight: 600; font-size: 12px; }
+.hi { color: var(--good); font-weight: 600; } .lo { color: var(--bad); font-weight: 600; } .mid { color: var(--warn); font-weight: 600; }
+details.cfg { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; margin: 6px 0; background: var(--panel); }
+details.cfg summary { cursor: pointer; font-weight: 600; }
+.cfgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 4px 14px; margin-top: 6px; }
+.cfgrid label { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: 13px; }
+.cfgrid label.changed span { color: var(--accent); font-weight: 600; }
+.mobrow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; margin: 2px 0; } .mobrow b { min-width: 92px; }
+.boards { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
+.board { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.cell { width: 30px; height: 30px; position: relative; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+.cell svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.cell .lab { position: relative; font-weight: 700; z-index: 1; text-shadow: 0 0 2px var(--panel); }
+.cell.fog { background: var(--fog) !important; }
+.pc { position: absolute; z-index: 2; width: 13px; height: 13px; border-radius: 50%; color: #fff; font-size: 9px; line-height: 13px; text-align: center; font-weight: 700; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.card { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--panel); font-size: 13px; }
+.card .t { display: flex; justify-content: space-between; font-weight: 700; }
+.card.turn { outline: 2px solid var(--accent); }
+.log { font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; max-height: 260px; overflow: auto; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
+.log .new { color: var(--accent); font-weight: 600; }
+.steps { counter-reset: s; list-style: none; padding: 0; } .steps li { margin: 6px 0; display: flex; gap: 8px; align-items: center; }
+.steps li::before { counter-increment: s; content: counter(s); width: 22px; height: 22px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex: none; }
+.find { border-left: 3px solid var(--accent); padding-left: 10px; margin: 8px 0; }
+.bar { height: 8px; background: var(--accent); border-radius: 4px; }
+</style>
+
+<div class="wrap">
+  <span class="tag">Prototype · throwaway</span>
+  <h1>Shenanyrinth balance simulation</h1>
+  <p class="q"><b>The question</b> (<a href="https://github.com/danielbank/shenanyrinth/issues/17">Balance simulation</a>): which stats, items and builds are overpowered or useless, and does a 2–6 Player game really fit 20–40 minutes? Bots play complete games under every rule decided on the <a href="https://github.com/danielbank/shenanyrinth/issues/1">map</a>: Pivots and Lost, Torchlight, Clashes with Press and Retreat, Shakedowns and Rams, Meddle, Sway and Resist, the four Town buildings, Loot, Deeds, the Doom Track and the Guardian. Every number is editable below, so you can try a tuning and see what it does.</p>
+  <p class="q muted"><b>How to read it:</b> bots are decent but not perfect. They plan each move over the Tiles they can see, fight Mobs when the odds are worth it, bank Gold when their Pack gets heavy, and jab at whoever is leading. Each bot plays one <b>build</b>: its 6 setup points plus a shopping list. Game length in minutes comes from a timing guess (15 s a Turn, 12 s per Exchange, and so on, all editable). Treat the minutes as relative, not gospel.</p>
+  <div class="tabs" id="tabs"></div>
+  <div id="body"></div>
+  <h2>Settings <span class="muted" style="font-weight:400;font-size:13px">(every number from the map; changes apply to Watch and Run)</span></h2>
+  <div class="row"><button id="resetCfg">Reset to the map's numbers</button><span class="muted" id="cfgNote"></span></div>
+  <div id="cfg"></div>
+</div>
+
+<script>
+/*__SIM__*/
+</script>
+<script>
+/* ===== Throwaway page shell ===== */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+let CFG = Sim.clone(Sim.DEFAULTS);
+let tab = 'watch';
+const COLORS = ['#c0392b', '#2471a3', '#1e8449', '#b9770e', '#7d3c98', '#117a65'];
+const f1 = (x, d = 1) => x === undefined || Number.isNaN(x) || x === null ? '–' : (+x).toFixed(d);
+const pc = (x) => x === undefined || Number.isNaN(x) ? '–' : Math.round(x * 100) + '%';
+const deepMerge = (a, b) => { for (const k in b) { if (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k])) a[k] = deepMerge(a[k] || {}, b[k]); else a[k] = b[k]; } return a; };
+
+/* ---------- scenarios (guided walkthroughs) ---------- */
+const PROPOSAL = {
+  rules: { hpBase: 4 },
+  forestMobs: [
+    { name: 'Goblin', Fight: 8, Magic: 8, Trickery: 6, wounds: 1, damage: 1, trophy: 1, gold: 1 },
+    { name: 'Myconid', Fight: 6, Magic: 8, Trickery: 10, wounds: 1, damage: 1, trophy: 1, gold: 1 },
+    { name: 'Pixie', Fight: 10, Magic: 6, Trickery: 8, wounds: 1, damage: 1, trophy: 1, gold: 1 },
+    { name: 'Dire Wolf', Fight: 10, Magic: 8, Trickery: 6, wounds: 2, damage: 1, trophy: 1, gold: 2 },
+    { name: 'Bandit', Fight: 6, Magic: 8, Trickery: 10, wounds: 2, damage: 1, trophy: 1, gold: 2 },
+    { name: 'Treant', Fight: 10, Magic: 6, Trickery: 8, wounds: 2, damage: 1, trophy: 1, gold: 2 }],
+  prices: { gearTier1: { gold: 5, artifacts: 0 }, training: { gold: 6, herbs: 1, artifacts: 1 } },
+  dungeon: { artifactTokens: 5 }, forest: { herbTokens: 4 },
+  guardian: { name: 'Red Wyrm', Fight: 14, Magic: 12, Trickery: 10, wounds: 4, damage: 3, trophyPerWound: 2, gold: 0 },
+};
+const SCEN = [
+  { id: 'baseline', title: '1 · Baseline', cfg: {},
+    text: 'The numbers exactly as decided on the map. Watch for: games last about 25–40 minutes, but the Guardian falls in only about 1 game in 10 (the Doom Track ends the rest); most Players spend three-quarters of their Turns in the Forest; almost nothing gets bought.',
+    steps: [['Load the map\'s numbers', 'apply'], ['Run 300 games at 2, 4 and 6 Players', 'run'], ['Read the build table: who wins more than their fair share?', null]] },
+  { id: 'dex', title: '2 · DEX is the strongest stat', cfg: {},
+    text: 'Random stat spreads at 4 Players: each row shows how often Players with 0, 1, 2 or 3+ points in that stat win, relative to a fair share. DEX at 3 wins about 1.7× its share; points in STR, CON, CHA or WIS lose. Then try the two DEX variants: turning DEX squares off makes DEX fair, so it\'s the extra squares, not Trickery. Forcing DEX squares (added to the roll) leaves DEX just as strong: the edge is speed.',
+    steps: [['Load the map\'s numbers', 'apply'], ['Measure stat value (random builds, 4 Players)', 'stats'], ['Switch DEX squares off (dexPerExtraSquare 99)', 'nodex'], ['Measure again', 'stats']] },
+  { id: 'forest', title: '3 · Forest Mobs are free points', cfg: {},
+    text: 'Forest Mobs die in about 100% of Clashes and cost about 0.17 HP each, so the Forest is a safe Trophy farm worth roughly a third of every score. Compare "Forest kill rate" and "Forest HP lost per Clash" with the proposed tougher Forest dice (weak Approach d6, others d8–d10).',
+    steps: [['Load the map\'s numbers', 'apply'], ['Run 300 games', 'run'], ['Load the proposed Forest dice', 'forestprop'], ['Run 300 games', 'run']] },
+  { id: 'dungeon', title: '4 · The Dungeon is a revolving door', cfg: {},
+    text: 'At HP 3 against Damage-2 Mobs and about 15% of Dungeon Turns ending Lost, a trip down lasts 2–4 Turns before you\'re sent home, and the walk back is 4–5 Turns. A third to a half of Players never go down at all, so Artifacts (and so Gear) barely exist. Watch "Never reached the Dungeon" and "Gear tiers per Player".',
+    steps: [['Load the map\'s numbers', 'apply'], ['Run 300 games', 'run'], ['Watch a 2-Player game and follow the Dungeon trips in the log', 'watch']] },
+  { id: 'proposal', title: '5 · A candidate tuning', cfg: PROPOSAL,
+    text: 'A first pass at numbers, not a recommendation yet: base HP 4, tougher Forest dice, tier-1 Gear for Gold only (5), Training 6 Gold + Herb + Artifact, 5 Artifact and 4 Herb tokens, and a Red Wyrm of d14 / d12 / d10★. The Guardian ending rises to about 1 game in 4 and Gear starts to appear, but DEX still dominates, because that needs a rules decision, not a number.',
+    steps: [['Load the candidate tuning', 'apply'], ['Run 300 games at 2, 4 and 6 Players', 'run'], ['Measure stat value', 'stats']] },
+];
+
+/* ---------- tabs ---------- */
+function renderTabs() {
+  const all = [['watch', 'Watch a game'], ['run', 'Run many games'], ...SCEN.map(s => [s.id, s.title])];
+  $('tabs').innerHTML = '';
+  for (const [id, label] of all) { const b = document.createElement('button'); b.textContent = label; b.className = id === tab ? 'on' : ''; b.onclick = () => { tab = id; renderTabs(); renderBody(); }; $('tabs').appendChild(b); }
+}
+function renderBody() {
+  if (tab === 'watch') return renderWatch();
+  if (tab === 'run') return renderRun();
+  renderScenario(SCEN.find(s => s.id === tab));
+}
+
+/* ---------- settings editor ---------- */
+const LABELS = { rules: 'Core rules', doomTrack: 'Doom Track length (Rounds, by Player count)', deedValues: 'Deed values', forest: 'Forest', dungeon: 'Dungeon', prices: 'Prices (Gold before Haggle)',
+  lootChance: 'Loot chance (needs this on a d6)', lootTable: 'Loot table (d20 weights)', forestMobs: 'Forest Mobs (die per Approach)', dungeonMobs: 'Dungeon Mobs (die per Approach)', guardian: 'Guardian',
+  timing: 'Timing guess (seconds)', bots: 'How the bots think (not rules)', guardianBonus: 'Guardian bonus' };
+function renderCfg() {
+  const root = $('cfg'); root.innerHTML = '';
+  const top = document.createElement('div'); top.className = 'cfgrid';
+  top.appendChild(field(CFG, 'guardianBonus', Sim.DEFAULTS.guardianBonus)); root.appendChild(top);
+  for (const key of Object.keys(CFG)) {
+    if (key === 'guardianBonus') continue;
+    const d = document.createElement('details'); d.className = 'cfg';
+    d.innerHTML = `<summary>${LABELS[key] || key}</summary>`;
+    const val = CFG[key], def = Sim.DEFAULTS[key];
+    if (Array.isArray(val)) val.forEach((m, i) => d.appendChild(mobRow(m, def[i] || {})));
+    else if (val.Fight !== undefined) d.appendChild(mobRow(val, def));
+    else d.appendChild(objGrid(val, def));
+    root.appendChild(d);
+  }
+  const changed = countChanged(CFG, Sim.DEFAULTS);
+  $('cfgNote').textContent = changed ? `${changed} number(s) differ from the map (highlighted).` : 'All numbers match the map.';
+}
+function countChanged(a, b) { let n = 0; for (const k in a) { if (typeof a[k] === 'object') n += countChanged(a[k], b ? b[k] : undefined); else if (!b || a[k] !== b[k]) n++; } return n; }
+function objGrid(obj, def) {
+  const g = document.createElement('div'); g.className = 'cfgrid';
+  for (const k of Object.keys(obj)) {
+    if (typeof obj[k] === 'object') { for (const k2 of Object.keys(obj[k])) g.appendChild(field(obj[k], k2, def && def[k] ? def[k][k2] : undefined, `${k} · ${k2}`)); }
+    else g.appendChild(field(obj, k, def ? def[k] : undefined));
+  }
+  return g;
+}
+function field(obj, k, dv, label) {
+  const l = document.createElement('label'); const v = obj[k];
+  l.innerHTML = `<span>${esc(label || k)}</span>`;
+  let inp;
+  if (typeof v === 'boolean') { inp = document.createElement('input'); inp.type = 'checkbox'; inp.checked = v; inp.onchange = () => { obj[k] = inp.checked; renderCfg(); }; }
+  else if (typeof v === 'number') { inp = document.createElement('input'); inp.type = 'number'; inp.step = 'any'; inp.value = v; inp.onchange = () => { obj[k] = Number(inp.value); renderCfg(); }; }
+  else { inp = document.createElement('select'); for (const o of (k === 'planning' ? ['full', 'greedy'] : [v])) { const op = document.createElement('option'); op.textContent = o; op.selected = o === v; inp.appendChild(op); } inp.onchange = () => { obj[k] = inp.value; renderCfg(); }; }
+  if (dv !== undefined && dv !== v) l.className = 'changed';
+  l.appendChild(inp); return l;
+}
+function mobRow(m, def) {
+  const r = document.createElement('div'); r.className = 'mobrow';
+  r.innerHTML = `<b>${esc(m.name)}</b>`;
+  for (const k of Object.keys(m)) { if (k === 'name') continue; const l = field(m, k, def[k]); l.style.display = 'inline-flex'; l.style.gap = '4px'; l.querySelector('input').style.width = '52px'; r.appendChild(l); }
+  return r;
+}
+$('resetCfg').onclick = () => { CFG = Sim.clone(Sim.DEFAULTS); renderCfg(); };
+
+/* ---------- Watch a game ---------- */
+let G = null, seen = 0, seats = ['Brawler', 'Wyrmslayer', 'Cache-hunter', 'Silver-tongue'], seed = 7;
+function newWatchGame() { G = Sim.newGame(CFG, { builds: seats.map(n => Sim.BUILDS.find(b => b.name === n)), seed, checks: true }); seen = 0; }
+function renderWatch() {
+  if (!G) newWatchGame();
+  const b = $('body');
+  b.innerHTML = `<div class="panel"><div class="row">
+      <label>Players <select id="np">${[2, 3, 4, 5, 6].map(n => `<option ${n === seats.length ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+      <label>Seed <input id="seed" type="number" value="${seed}"></label>
+      <button id="ng">New game</button><span class="muted">|</span>
+      <button class="primary" id="nt">Next Turn</button><button id="nr">Next Round</button><button id="ne">Play to the end</button></div>
+      <div class="row" id="seatsel" style="margin-top:8px"></div></div>
+    <div id="status" class="panel"></div>
+    <div class="cards" id="cards"></div>
+    <h3>The board <span class="muted" style="font-weight:400">(grey = not yet revealed by Torchlight; coloured dots = Players)</span></h3>
+    <div class="boards" id="boards"></div>
+    <h3>What happened <span class="muted" style="font-weight:400">(newest in purple)</span></h3><div class="log" id="log"></div>`;
+  seats.forEach((s, i) => { const sel = document.createElement('select'); sel.innerHTML = Sim.BUILDS.map(bd => `<option ${bd.name === s ? 'selected' : ''}>${bd.name}</option>`).join(''); sel.onchange = () => { seats[i] = sel.value; }; const l = document.createElement('label'); l.innerHTML = `<span style="color:${COLORS[i]};font-weight:700">P${i + 1}</span> `; l.appendChild(sel); $('seatsel').appendChild(l); });
+  $('np').onchange = () => { const n = +$('np').value; while (seats.length < n) seats.push(Sim.BUILDS[seats.length % Sim.BUILDS.length].name); seats = seats.slice(0, n); renderWatch(); };
+  $('seed').onchange = () => { seed = +$('seed').value; };
+  $('ng').onclick = () => { newWatchGame(); drawWatch(); };
+  $('nt').onclick = () => { seen = G.log.length; Sim.playTurn(G); drawWatch(); };
+  $('nr').onclick = () => { seen = G.log.length; Sim.playRound(G); drawWatch(); };
+  $('ne').onclick = () => { seen = G.log.length; Sim.playToEnd(G); drawWatch(); };
+  drawWatch();
+}
+function drawWatch() {
+  const g = G, cur = g.players[g.seat];
+  const deeds = g.deeds.map(d => `<b>${d.def.name}</b> (${d.value}, ${esc(d.def.text)})${d.by ? ` ✓ ${d.by}` : ''}`).join(' · ');
+  $('status').innerHTML = g.ended
+    ? `<b>Game over</b> after ${g.round} Rounds (${g.endReason}), about ${f1(g.time / 60)} minutes. Winner: <b>${g.winners.map(i => g.players[i].name + ' (' + g.players[i].build + ')').join(' & ')}</b>.<br>Deeds: ${deeds}`
+    : `<b>Round ${g.round}</b> of a ${g.doomLen}-Round Doom Track${g.endTriggered ? ' · <b>the Guardian has fallen: last Round!</b>' : ''} · next up: <b style="color:${COLORS[cur.id]}">${cur.name}</b> · about ${f1(g.time / 60)} min so far<br>Deeds: ${deeds}${g.m.violations.length ? `<br><span class="lo">Rule check failed: ${esc(g.m.violations[0])}</span>` : ''}`;
+  $('cards').innerHTML = g.players.map(p => {
+    const sc = Sim.score(p);
+    const stats = Sim.STATS.map(s => `${s} ${p.base[s]}${p.gear[s] ? `<span class="hi">+${p.gear[s]}</span>` : ''}`).join(' · ');
+    const items = [...Sim.STATS.filter(s => p.gear[s]).map(s => Sim.GEAR_NAME[s][p.gear[s] - 1]), p.boots && 'Boots of Second Thoughts', p.compass && 'Lodestone Compass',
+      ...p.items.map(it => Sim.ITEM_NAME[it.id] + (it.charges !== undefined ? ` (${it.charges})` : ''))].filter(Boolean);
+    return `<div class="card ${p === cur && !g.ended ? 'turn' : ''}"><div class="t"><span style="color:${COLORS[p.id]}">${p.name} · ${p.build}</span><span>${sc.total} pts</span></div>
+      <div class="muted">${p.level === 'town' ? 'Town' : p.level === 'forest' ? 'Forest' : 'Dungeon'} · HP ${p.hp}/${Sim.maxHp(g, p)}${p.clashAt !== null ? ' · mid-Clash' : ''}</div>
+      <div>${stats}</div>
+      <div>Pack: ${p.pack.gold} Gold, ${p.pack.herbs} Herbs, ${p.pack.arts} Artifacts</div>
+      <div>Keep ${p.keep} · Trophies ${p.trophies} · Deeds ${p.deedPts} · Trinkets ${p.trinkets.length}</div>
+      <div class="muted">Slots ${Sim.slotsUsed(p)}/${g.cfg.rules.slots}: ${items.length ? esc(items.join(', ')) : 'empty'}</div>
+      <div class="muted">Lost ${p.lost} · Knocked Out ${p.ko}</div></div>`;
+  }).join('');
+  $('boards').innerHTML = '';
+  $('boards').appendChild(boardEl(g, 'town')); $('boards').appendChild(boardEl(g, 'forest')); $('boards').appendChild(boardEl(g, 'dungeon'));
+  $('log').innerHTML = g.log.map((l, i) => `<div class="${i >= seen ? 'new' : ''}">${esc(l)}</div>`).join('');
+  $('log').scrollTop = 1e9;
+}
+function pathSvg(ex) {
+  const end = { N: [50, 0], E: [100, 50], S: [50, 100], W: [0, 50] };
+  return `<svg viewBox="0 0 100 100">${[...ex].map(d => `<line x1="50" y1="50" x2="${end[d][0]}" y2="${end[d][1]}" stroke="currentColor" stroke-opacity=".35" stroke-width="16" stroke-linecap="round"/>`).join('')}</svg>`;
+}
+function boardEl(g, lv) {
+  const wrap = document.createElement('div');
+  const n = lv === 'town' ? 5 : g.L[lv].n, L = g.L[lv];
+  wrap.innerHTML = `<div class="muted" style="font-weight:600;margin-bottom:4px">${lv === 'town' ? 'Town' : lv === 'forest' ? 'Forest' : 'Dungeon'}</div>`;
+  const el = document.createElement('div'); el.className = 'board'; el.style.gridTemplateColumns = `repeat(${n}, 30px)`;
+  for (let i = 0; i < n * n; i++) {
+    const c = document.createElement('div'); c.className = 'cell'; c.style.background = `var(--${lv})`;
+    let lab = '', title = '';
+    if (lv === 'town') {
+      const B = Sim.TOWN.buildings[i]; if (B) { lab = B === 'Keep Hall' ? 'K' : B[0] === 'A' && B[1] === 'd' ? 'G' : B === 'Apothecary' ? 'Ap' : B === 'Arcanist' ? 'Ar' : 'B'; title = B; }
+      if (Object.values(Sim.TOWN.gates).includes(i)) { lab = '⛩'; title = 'Gate'; }
+    } else {
+      const known = L.revealed[i];
+      if (lv === 'forest' || known) c.innerHTML = pathSvg(L.cells[i]);
+      if (!known && lv === 'dungeon') c.classList.add('fog');
+      const f = L.feature.get(i);
+      if (f && (known || f.type === 'gate')) { lab = f.type === 'gate' ? '⛩' : f.type === 'stairs' ? '⬇' : f.type === 'up' ? '⬆' : ''; title = f.type; }
+      if (known) {
+        const m = L.mobs.get(i); if (m) { lab = m.guardian ? '🐉' : m.def.name[0]; title = `${m.def.name} ${m.wounds}/${m.def.wounds} Wounds`; c.style.color = 'var(--bad)'; }
+        const t = L.tokens.get(i); if (t && !m) { lab = t.type === 'gold' ? '●' : t.type === 'herbs' ? '♣' : t.type === 'arts' ? '◆' : `?${t.rating}`; title = t.type === 'cache' ? `Cache rated ${t.rating}` : `${t.type} ${t.amt || ''}`; c.style.color = t.type === 'gold' ? 'var(--warn)' : t.type === 'cache' ? 'var(--accent)' : 'var(--good)'; }
+        const pl = L.piles.get(i); if (pl) { lab = '$'; title = `Dropped pile: ${pl.gold} Gold, ${pl.herbs} Herbs, ${pl.arts} Artifacts`; }
+      } else if (lv === 'forest') c.classList.add('fog');
+    }
+    c.title = title;
+    if (lab) c.insertAdjacentHTML('beforeend', `<span class="lab">${lab}</span>`);
+    g.players.filter(p => p.level === lv && p.idx === i).forEach((p, k) => c.insertAdjacentHTML('beforeend', `<span class="pc" style="background:${COLORS[p.id]};left:${1 + k * 7}px;top:${1 + k * 4}px">${p.id + 1}</span>`));
+    el.appendChild(c);
+  }
+  wrap.appendChild(el); return wrap;
+}
+
+/* ---------- Run many games ---------- */
+let RESULTS = null, STATRES = null, running = false;
+function renderRun(extraTop = '') {
+  $('body').innerHTML = `${extraTop}<div class="panel"><div class="row">
+    <label>Games per Player count <input id="games" type="number" value="300"></label>
+    <span>Player counts: ${[2, 3, 4, 5, 6].map(n => `<label><input type="checkbox" class="pcount" value="${n}" ${[2, 4, 6].includes(n) ? 'checked' : ''}> ${n}</label>`).join(' ')}</span>
+    <button class="primary" id="go">Run</button><button id="gostats">Measure stat value</button><span id="prog" class="muted"></span></div></div>
+    <div id="res">${RESULTS ? resultsHtml(RESULTS) : '<p class="muted">No results yet.</p>'}</div><div id="sres">${STATRES ? statsHtml(STATRES) : ''}</div>`;
+  $('go').onclick = () => runGames(); $('gostats').onclick = () => runStats();
+}
+function chunked(jobs, onDone) {
+  running = true; const out = []; let k = 0;
+  const step = () => { const t = performance.now(); while (k < jobs.length && performance.now() - t < 40) out.push(jobs[k++]()); if ($('prog')) $('prog').textContent = `${k} / ${jobs.length} games…`; if (k < jobs.length) setTimeout(step, 0); else { running = false; if ($('prog')) $('prog').textContent = ''; onDone(out); } };
+  step();
+}
+function runGames(cb) {
+  if (running) return;
+  const games = +($('games') ? $('games').value : 300), counts = $('games') ? [...document.querySelectorAll('.pcount:checked')].map(x => +x.value) : [2, 4, 6];
+  const cfg = Sim.clone(CFG), jobs = [];
+  for (const n of counts) for (let k = 0; k < games; k++) jobs.push(() => ({ n, r: Sim.runBatch(cfg, { n, games: 1, seed: 11 + k * 13 + n })[0] }));
+  chunked(jobs, (out) => {
+    RESULTS = { counts, by: Object.fromEntries(counts.map(n => [n, Sim.summarize(out.filter(o => o.n === n && !o.r.crash).map(o => o.r))])), all: Sim.summarize(out.filter(o => !o.r.crash).map(o => o.r)), crashes: out.filter(o => o.r.crash).map(o => o.r.crash) };
+    if ($('res')) $('res').innerHTML = resultsHtml(RESULTS); if (cb) cb();
+  });
+}
+function runStats(cb) {
+  if (running) return;
+  const cfg = Sim.clone(CFG), jobs = [];
+  for (let k = 0; k < 2000; k++) jobs.push(() => Sim.runBatch(cfg, { n: 4, games: 1, pool: 'random', seed: 3 + k * 17 })[0]);
+  chunked(jobs, (out) => {
+    const tab = {};
+    for (const r of out) if (!r.crash) for (const p of r.players) for (const s of Sim.STATS) { const v = Math.min(3, p.stats[s]); const e = ((tab[s] ||= {})[v] ||= { n: 0, w: 0 }); e.n++; e.w += p.won; }
+    STATRES = tab; if ($('sres')) $('sres').innerHTML = statsHtml(tab); if (cb) cb();
+  });
+}
+const cls = (v, good, bad, higherBetter = true) => (higherBetter ? v >= good : v <= good) ? 'hi' : (higherBetter ? v <= bad : v >= bad) ? 'lo' : '';
+function resultsHtml(R) {
+  const rows = [
+    ['Game length (minutes, mean)', s => f1(s.minutes.mean), s => s.minutes.mean > 40 || s.minutes.mean < 20 ? 'lo' : 'hi'],
+    ['… 10th–90th percentile', s => `${f1(s.minutes.p10, 0)}–${f1(s.minutes.p90, 0)}`],
+    ['Rounds played', s => f1(s.rounds)],
+    ['Games ended by the Guardian', s => pc(s.guardianEnd), s => s.guardianEnd < 0.25 ? 'lo' : ''],
+    ['Games where anyone reached the Guardian', s => pc(s.guardianReachedShare)],
+    ['Round the Guardian was first fought', s => f1(s.guardianFirstRound)],
+    ['Round the Guardian fell', s => f1(s.guardianKillRound)],
+    ['Clashes with the Guardian before it fell', s => f1(s.guardianClashesToKill)],
+    ['Round a Player first reaches the Dungeon', s => f1(s.firstDungeonRound)],
+    ['Players who never reach the Dungeon', s => pc(s.neverDungeon), s => s.neverDungeon > 0.3 ? 'lo' : ''],
+    ['Share of Turns: Town / Forest / Dungeon', s => `${pc(s.turnShare.town)} / ${pc(s.turnShare.forest)} / ${pc(s.turnShare.dungeon)}`],
+    ['Forest Turns ending Lost', s => pc(s.lostRate.forest)],
+    ['Dungeon Turns ending Lost', s => pc(s.lostRate.dungeon)],
+    ['Dungeon Clashes ending Knocked Out', s => pc(s.clash.dungeonKoPerClash)],
+    ['Forest Clashes that kill the Mob', s => pc(s.clash.forestKillPerClash), s => s.clash.forestKillPerClash > 0.9 ? 'lo' : ''],
+    ['Forest HP lost per Clash', s => f1(s.clash.forestHpPerClash, 2), s => s.clash.forestHpPerClash < 0.3 ? 'lo' : ''],
+    ['Dungeon HP lost per Clash', s => f1(s.clash.dungeonHpPerClash, 2)],
+    ['Forest / Dungeon Clashes per game', s => `${f1(s.clash.forestPerGame)} / ${f1(s.clash.dungeonPerGame)}`],
+    ['Shakedowns per game (from Rams)', s => `${f1(s.shakedowns.perGame)} (${f1(s.shakedowns.rams)})`],
+    ['Sway / Resist / Meddle per game', s => `${f1(s.responses.swayPerGame)} / ${f1(s.responses.resistPerGame)} / ${f1(s.responses.meddlePerGame)}`],
+    ['Winning score', s => f1(s.score.top)],
+    ['Winner\'s lead over 2nd', s => f1(s.score.margin)],
+    ['Games won by 3 points or fewer', s => pc(s.score.closeGames)],
+    ['Average points from Keep / Pack / Trophies / Deeds / Trinkets', s => `${f1(s.composition.keep)} / ${f1(s.composition.pack)} / ${f1(s.composition.trophies)} / ${f1(s.composition.deeds)} / ${f1(s.composition.trinkets, 2)}`],
+    ['Gold spent per Player', s => f1(s.spentPerPlayer)],
+    ['Gear tiers per Player at the end', s => f1(s.gearTiersPerPlayer, 2), s => s.gearTiersPerPlayer < 1 ? 'lo' : ''],
+    ['Training bought per Player', s => f1(s.trainedPerPlayer, 2), s => s.trainedPerPlayer < 0.3 ? 'lo' : ''],
+  ];
+  const cs = R.counts;
+  let h = `<h3>By Player count</h3><div class="scroll"><table><tr><th></th>${cs.map(n => `<th>${n} Players</th>`).join('')}</tr>`;
+  for (const [label, fn, c] of rows) h += `<tr><td>${label}</td>${cs.map(n => `<td class="${c ? c(R.by[n]) : ''}">${fn(R.by[n])}</td>`).join('')}</tr>`;
+  h += '</table></div>';
+  const B = Object.entries(R.all.builds).sort((a, b) => b[1].vsFair - a[1].vsFair);
+  h += `<div class="grid2"><div><h3>Builds: wins compared with a fair share</h3><table><tr><th>Build</th><th>× fair</th><th>avg score</th><th>slew the Guardian</th></tr>` +
+    B.map(([k, b]) => `<tr><td title="${esc((Sim.BUILDS.find(x => x.name === k) || {}).blurb || '')}">${k}</td><td class="${b.vsFair >= 1.25 ? 'hi' : b.vsFair <= 0.8 ? 'lo' : ''}">${f1(b.vsFair, 2)}</td><td>${f1(b.score)}</td><td>${pc(b.featRate)}</td></tr>`).join('') + '</table></div>';
+  const D = Object.entries(R.all.deeds).sort((a, b) => b[1].claimed / b[1].drawn - a[1].claimed / a[1].drawn);
+  h += `<div><h3>Deeds: how often claimed when drawn</h3><table><tr><th>Deed</th><th>claimed</th><th>mean Round</th></tr>` +
+    D.map(([k, d]) => { const r = d.claimed / d.drawn; return `<tr><td>${k}</td><td class="${r < 0.15 ? 'lo' : r > 0.95 ? 'mid' : ''}">${pc(r)}</td><td>${d.rounds.length ? f1(d.rounds.reduce((a, b) => a + b, 0) / d.rounds.length) : '–'}</td></tr>`; }).join('') + '</table></div></div>';
+  const bought = Object.entries(R.all.bought).sort((a, b) => b[1] - a[1]);
+  h += `<h3>Purchases per game</h3><p>${bought.length ? bought.map(([k, v]) => `${esc(k)} <b>${f1(v, 2)}</b>`).join(' · ') : 'nothing'}</p>`;
+  h += `<p class="muted">Rule checks (fuzz invariants): ${R.all.violationCount ? `<span class="lo">${R.all.violationCount} failures, e.g. ${esc(R.all.violations[0])}</span>` : 'none failed'}${R.crashes.length ? ` · <span class="lo">${R.crashes.length} crashes</span>` : ''}.</p>`;
+  return h;
+}
+function statsHtml(tab) {
+  let h = `<h3>Stat value: wins compared with a fair share, by starting points (2,000 random-build games at 4 Players)</h3><table><tr><th>Stat</th><th>0 points</th><th>1</th><th>2</th><th>3</th></tr>`;
+  for (const s of Sim.STATS) h += `<tr><td>${s}</td>${[0, 1, 2, 3].map(v => { const e = tab[s][v]; if (!e) return '<td>–</td>'; const x = e.w / e.n / 0.25; return `<td class="${x >= 1.25 ? 'hi' : x <= 0.8 ? 'lo' : ''}">${f1(x, 2)}</td>`; }).join('')}</tr>`;
+  return h + '</table><p class="muted">1.00 = wins exactly a fair share. A stat is overpowered when its 3-point column is far above 1 and its 0-point column far below.</p>';
+}
+
+/* ---------- scenario tabs ---------- */
+function renderScenario(sc) {
+  const actions = {
+    apply: () => { CFG = deepMerge(Sim.clone(Sim.DEFAULTS), Sim.clone(sc.cfg)); renderCfg(); },
+    run: (done) => runGames(done), stats: (done) => runStats(done),
+    nodex: () => { CFG.rules.dexPerExtraSquare = 99; renderCfg(); },
+    forestprop: () => { CFG.forestMobs = Sim.clone(PROPOSAL.forestMobs); renderCfg(); },
+    watch: () => { seats = ['Wyrmslayer', 'Pathfinder']; G = null; tab = 'watch'; renderTabs(); renderBody(); },
+  };
+  const top = `<div class="panel"><p>${sc.text}</p>${Object.keys(sc.cfg).length ? `<p class="muted">Settings this scenario loads: ${esc(JSON.stringify(sc.cfg).slice(0, 400))}${JSON.stringify(sc.cfg).length > 400 ? '…' : ''}</p>` : ''}
+    <ol class="steps">${sc.steps.map(([label, act], i) => `<li>${act ? `<button data-i="${i}" class="${i === 0 ? 'primary' : ''}">${esc(label)}</button>` : `<span>${esc(label)}</span>`}</li>`).join('')}</ol></div>`;
+  renderRun(top);
+  document.querySelectorAll('.steps button').forEach(btn => btn.onclick = () => {
+    const i = +btn.dataset.i, act = sc.steps[i][1];
+    const next = () => { btn.classList.remove('primary'); btn.textContent = '✓ ' + sc.steps[i][0]; const nb = document.querySelector(`.steps button[data-i="${i + 1}"]`); if (nb) nb.classList.add('primary'); };
+    if (act === 'run' || act === 'stats') actions[act](next); else { actions[act](); next(); }
+  });
+}
+
+renderTabs(); renderBody(); renderCfg();
+</script>
