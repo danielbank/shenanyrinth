@@ -490,7 +490,7 @@ All assets are CC0.
 
 **Fog:** dark rock in the Dungeon, and a leafy overlay in the Forest. Revealed squares fade in.
 
-**Sound:** Kenney Impact, RPG, Casino, Interface and Music Jingles files, for:
+**Sound:** Kenney RPG, Casino, Interface and Music Jingles files (Impact Sounds isn't mirrored outside kenney.nl, so RPG Audio covers footsteps and Clash sounds), for:
 - footsteps by surface
 - dice
 - hits
@@ -512,6 +512,8 @@ Generated Web Audio makes the slap clap and the Trinket gags. Each Player has mu
      Almost every test goes through it, including the fuzz games. Hidden information is tested through the view.
   2. **The server over real sockets.** This seam is only for what the rules engine can't cover: seats and reconnect tokens, Host passing, skipping an offline Player, the Response window timer and auto-pass, and saving and reloading.
   3. **The client's event queue**, as a pure module: play, skip and fast-forward.
+
+  On top of the three seams, a check on committed assets fails if a world sound has no Kenney file, or a pack has no licence and source note.
 
   React components have no test seam.
 - **Business logic is unit-tested in full:**

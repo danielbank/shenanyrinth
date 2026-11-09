@@ -1,36 +1,45 @@
 /**
- * Sound. World sounds play Kenney CC0 files dropped into `public/sounds/<name>.ogg`; until they
- * are there, and for the slap and the Trinket gags, sounds are generated with Web Audio.
+ * Sound. World sounds play Kenney CC0 files committed in `public/sounds/<name>.ogg` (see
+ * `SOURCES.md` there); the slap and the Trinket gags are generated with Web Audio.
  * Mute and volume are per device.
  */
-export type SoundName =
-  | 'step-town'
-  | 'step-forest'
-  | 'step-dungeon'
-  | 'dice'
-  | 'pivot'
-  | 'lost'
-  | 'stairs'
-  | 'coin'
-  | 'rustle'
-  | 'hit'
-  | 'miss'
-  | 'kill'
-  | 'shakedown'
-  | 'click'
-  | 'buy'
-  | 'deposit'
-  | 'chime'
-  | 'slap'
-  | 'trombone'
-  | 'fart'
-  | 'kazoo'
-  | 'squeak'
-  | 'lute'
-  | 'popper';
+export const WORLD_SOUNDS = [
+  'step-town',
+  'step-forest',
+  'step-dungeon',
+  'dice',
+  'pivot',
+  'lost',
+  'stairs',
+  'coin',
+  'rustle',
+  'hit',
+  'miss',
+  'kill',
+  'shakedown',
+  'click',
+  'buy',
+  'deposit',
+  'chime',
+] as const;
 
 /** The generated slap and Trinket gags, which never come from files and have a cooldown. */
-const GAGS = new Set<SoundName>(['slap', 'trombone', 'fart', 'kazoo', 'squeak', 'lute', 'popper']);
+export const GAG_SOUNDS = [
+  'slap',
+  'trombone',
+  'fart',
+  'kazoo',
+  'squeak',
+  'lute',
+  'popper',
+] as const;
+
+type WorldSound = (typeof WORLD_SOUNDS)[number];
+type GagSound = (typeof GAG_SOUNDS)[number];
+export type SoundName = WorldSound | GagSound;
+
+const isGag = (name: SoundName): name is GagSound =>
+  (GAG_SOUNDS as readonly string[]).includes(name);
 const GAG_COOLDOWN_MS = 1200;
 
 export interface AudioSettings {
@@ -72,49 +81,68 @@ export const audioSettings = {
 };
 
 let ctx: AudioContext | null = null;
+/** Fetch every world sound up front, so the first footstep isn't late. */
+function preload(ac: AudioContext): void {
+  for (const name of WORLD_SOUNDS) loadBuffer(ac, name).catch(() => {});
+}
+
 function context(): AudioContext | null {
   if (typeof AudioContext === 'undefined') return null;
-  ctx ??= new AudioContext();
+  if (!ctx) {
+    ctx = new AudioContext();
+    preload(ctx);
+  }
   if (ctx.state === 'suspended') void ctx.resume();
   return ctx;
 }
 
-const files = new Map<SoundName, AudioBuffer | null>();
-const loading = new Set<SoundName>();
-function loadFile(ac: AudioContext, name: SoundName): void {
-  if (loading.has(name)) return;
-  loading.add(name);
-  fetch(`/sounds/${name}.ogg`)
-    .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error('missing'))))
-    .then((data) => ac.decodeAudioData(data))
-    .then((buffer) => files.set(name, buffer))
-    .catch(() => files.set(name, null));
+const loads = new Map<WorldSound, Promise<AudioBuffer>>();
+/** Fetches and decodes a world sound's file once; a failed load is retried next time. */
+function loadBuffer(ac: AudioContext, name: WorldSound): Promise<AudioBuffer> {
+  let pending = loads.get(name);
+  if (!pending) {
+    pending = fetch(`/sounds/${name}.ogg`)
+      .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`missing ${name}.ogg`))))
+      .then((data) => ac.decodeAudioData(data));
+    pending.catch((err: unknown) => {
+      loads.delete(name);
+      console.warn(`Sound ${name} failed to load`, err);
+    });
+    loads.set(name, pending);
+  }
+  return pending;
 }
 
-const lastGag = new Map<SoundName, number>();
+const lastGag = new Map<GagSound, number>();
+
+function output(ac: AudioContext): GainNode {
+  const out = ac.createGain();
+  out.gain.value = settings.volume;
+  out.connect(ac.destination);
+  return out;
+}
 
 export function play(name: SoundName): void {
   if (settings.muted || settings.volume <= 0) return;
   const ac = context();
   if (!ac) return;
-  if (GAGS.has(name)) {
+  if (isGag(name)) {
     const now = performance.now();
     if (now - (lastGag.get(name) ?? -Infinity) < GAG_COOLDOWN_MS) return;
     lastGag.set(name, now);
-  }
-  const out = ac.createGain();
-  out.gain.value = settings.volume;
-  out.connect(ac.destination);
-  const file = GAGS.has(name) ? null : files.get(name);
-  if (file) {
-    const src = ac.createBufferSource();
-    src.buffer = file;
-    src.connect(out);
-    src.start();
+    GAG_SYNTH[name](ac, output(ac));
     return;
   }
-  if (!GAGS.has(name) && !files.has(name)) loadFile(ac, name);
-  SYNTH[name](ac, out);
+  loadBuffer(ac, name)
+    .then((buffer) => {
+      const src = ac.createBufferSource();
+      src.buffer = buffer;
+      src.connect(output(ac));
+      src.start();
+    })
+    .catch(() => {
+      // Already warned in loadBuffer; the committed-files test guards against missing files.
+    });
 }
 
 type Synth = (ac: AudioContext, out: AudioNode) => void;
@@ -166,39 +194,7 @@ function noise(
   src.start(t);
 }
 
-const SYNTH: Record<SoundName, Synth> = {
-  'step-town': (ac, o) => noise(ac, o, 0.05, { freq: 1800, gain: 0.15 }),
-  'step-forest': (ac, o) => noise(ac, o, 0.07, { freq: 700, gain: 0.2 }),
-  'step-dungeon': (ac, o) => noise(ac, o, 0.06, { freq: 2600, gain: 0.15 }),
-  dice: (ac, o) => [0, 0.06, 0.13, 0.22].forEach((at) => noise(ac, o, 0.04, { freq: 3000, at })),
-  pivot: (ac, o) => noise(ac, o, 0.18, { freq: 500, gain: 0.2 }),
-  lost: (ac, o) =>
-    [392, 330, 262].forEach((f, i) => tone(ac, o, f, 0.25, { at: i * 0.18, type: 'triangle' })),
-  stairs: (ac, o) =>
-    [262, 330, 392, 523].forEach((f, i) =>
-      tone(ac, o, f, 0.15, { at: i * 0.09, type: 'triangle' }),
-    ),
-  coin: (ac, o) => {
-    tone(ac, o, 988, 0.08, { gain: 0.15 });
-    tone(ac, o, 1319, 0.2, { at: 0.07, gain: 0.15 });
-  },
-  rustle: (ac, o) => noise(ac, o, 0.2, { freq: 900, gain: 0.15 }),
-  hit: (ac, o) => {
-    noise(ac, o, 0.12, { freq: 400, gain: 0.4 });
-    tone(ac, o, 160, 0.12, { to: 60 });
-  },
-  miss: (ac, o) => noise(ac, o, 0.15, { freq: 2000, gain: 0.12 }),
-  kill: (ac, o) => [523, 659, 784].forEach((f, i) => tone(ac, o, f, 0.18, { at: i * 0.08 })),
-  shakedown: (ac, o) => {
-    noise(ac, o, 0.1, { freq: 600, gain: 0.35 });
-    tone(ac, o, 220, 0.2, { to: 110, at: 0.05 });
-  },
-  click: (ac, o) => tone(ac, o, 1500, 0.03, { gain: 0.12 }),
-  buy: (ac, o) => [660, 880].forEach((f, i) => tone(ac, o, f, 0.1, { at: i * 0.07, gain: 0.15 })),
-  deposit: (ac, o) =>
-    [784, 988, 1175].forEach((f, i) => tone(ac, o, f, 0.12, { at: i * 0.06, gain: 0.13 })),
-  chime: (ac, o) =>
-    [659, 988].forEach((f, i) => tone(ac, o, f, 0.4, { at: i * 0.15, type: 'sine', gain: 0.2 })),
+const GAG_SYNTH: Record<GagSound, Synth> = {
   slap: (ac, o) => {
     noise(ac, o, 0.09, { freq: 2500, gain: 0.6 });
     noise(ac, o, 0.05, { freq: 800, gain: 0.4, at: 0.01 });
