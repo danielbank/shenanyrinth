@@ -6,6 +6,8 @@ export const COLOURS = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'] as
 export const STATS = ['STR', 'DEX', 'INT', 'WIS', 'CON', 'CHA'] as const;
 
 export const MAX_PLAYERS = 6;
+/** The slap's server cooldown, in milliseconds. */
+export const SLAP_COOLDOWN_MS = 1500;
 export const MIN_PLAYERS = 2;
 export const SETUP_POINTS = 6;
 export const SETUP_MAX_PER_STAT = 3;

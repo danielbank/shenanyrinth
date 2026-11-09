@@ -4,7 +4,9 @@ import { gameStore } from '../gameStore.ts';
 import { useGame } from '../useGame.ts';
 import { Board } from './board/Board.tsx';
 import { LevelTabs } from './hud/LevelTabs.tsx';
+import { AvatarCard } from './AvatarCard.tsx';
 import { ClashPanel } from './ClashPanel.tsx';
+import { SlapButton, SlapEffects } from './Slap.tsx';
 import { DeedsDrawer } from './DeedsDrawer.tsx';
 import { DiscardPanel } from './DiscardPanel.tsx';
 import { ResponseCard } from './ResponseCard.tsx';
@@ -26,12 +28,13 @@ export function Game({ view }: { view: PlayerView }) {
   const level = peek ?? myLevel;
   const [aim, setAim] = useState<Aim | null>(null);
   const [drawer, setDrawer] = useState<'deeds' | null>(null);
+  const [inspect, setInspect] = useState<string | null>(null);
   const pick = (square: number) =>
     setAim((a) => (a ? { ...a, picks: [...a.picks, square].slice(-picksNeeded(a.item.kind)) } : a));
   return (
     <div className={styles.shell}>
       <header className={styles.top}>
-        <PlayerRow view={view} />
+        <PlayerRow view={view} onInspect={setInspect} />
         <TurnBar view={view} />
         <Chips view={view} playing={queue.playing} />
       </header>
@@ -56,11 +59,16 @@ export function Game({ view }: { view: PlayerView }) {
       </div>
       <div className={styles.bottomRight}>
         <ItemBar view={view} onAim={setAim} />
+        <SlapButton view={view} />
         <button type="button" onClick={() => setDrawer('deeds')}>
           📜 Deeds {view.deeds.filter((d) => !d.claimedBy).length}/3
         </button>
       </div>
       {drawer === 'deeds' ? <DeedsDrawer view={view} onClose={() => setDrawer(null)} /> : null}
+      {inspect ? (
+        <AvatarCard view={view} playerId={inspect} onClose={() => setInspect(null)} />
+      ) : null}
+      <SlapEffects view={view} />
       {aim ? <AimBanner aim={aim} onDone={() => setAim(null)} /> : null}
       {queue.settled ? <Errands view={view} /> : null}
       {queue.settled && !view.response ? <ClashPanel view={view} /> : null}

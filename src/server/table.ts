@@ -24,6 +24,33 @@ export class Table {
     this.clock = clock;
     this.state = snapshot?.state ?? newGame({ seed });
     this.seats = new Map(Object.entries(snapshot?.seats ?? {}));
+    // After a restart nobody is connected until they come back.
+    this.state = {
+      ...this.state,
+      players: this.state.players.map((p) => ({ ...p, online: false })),
+    };
+  }
+
+  private connections = new Map<PlayerId, number>();
+
+  connected(id: PlayerId): void {
+    this.connections.set(id, (this.connections.get(id) ?? 0) + 1);
+    if (this.state.players.some((p) => p.id === id)) {
+      this.act(SYSTEM, { type: 'presence', player: id, online: true });
+    }
+  }
+
+  disconnected(id: PlayerId): void {
+    const left = (this.connections.get(id) ?? 1) - 1;
+    this.connections.set(id, left);
+    if (left === 0 && this.state.players.some((p) => p.id === id)) {
+      this.act(SYSTEM, { type: 'presence', player: id, online: false });
+    }
+  }
+
+  /** Server-side facts the client can't be trusted with, such as the time of a slap. */
+  stamp(action: Action): Action {
+    return action.type === 'slap' ? { type: 'slap', at: this.clock.now() } : action;
   }
 
   snapshot(): TableSnapshot {

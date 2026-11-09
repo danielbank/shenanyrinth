@@ -13,6 +13,8 @@ export function legalActions(g: GameState, id: PlayerId): Action[] {
   const out: Action[] = [];
   if (g.phase === 'lobby' && id === g.hostId) out.push({ type: 'startGame' });
   if (g.phase !== 'playing' || !g.turn) return out;
+  const current = currentPlayer(g)!;
+  if (!current.online && current.id !== id && findPlayer(g, id)) return [{ type: 'skipTurn' }];
   if (g.response) {
     const q = findPlayer(g, id);
     return q ? responseOptions(g, q) : [];

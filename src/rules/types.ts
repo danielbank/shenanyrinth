@@ -57,6 +57,8 @@ export interface Player {
   relic: boolean;
   /** Turns in a row ended in the Dungeon. */
   dungeonStreak: number;
+  /** Server time of this Player's last slap, for the cooldown. */
+  lastSlapAt: number | null;
   /** Shakedowns won, for the Shakedown Artist Deed. */
   shakedownWins: number;
   /** Just Shaken down: safe from Shakedowns until their next Turn. */
@@ -282,6 +284,11 @@ export type Action =
   | { type: 'ram'; target: PlayerId; approach: Approach }
   | { type: 'defend'; approach: Approach }
   | { type: 'discard'; item?: number; gear?: Stat }
+  | { type: 'passHost'; to: PlayerId }
+  | { type: 'presence'; player: PlayerId; online: boolean }
+  | { type: 'skipTurn' }
+  /** `at` is the server's clock, filled in by the server. */
+  | { type: 'slap'; at: number }
   | { type: 'exchange'; approach: Approach }
   | { type: 'retreat' }
   | { type: 'resumeClash' }
@@ -358,6 +365,10 @@ export type GameEvent = Base &
     | { type: 'cacheClaimed'; player: PlayerId; rating: number }
     | { type: 'discarded'; player: PlayerId }
     | { type: 'deedClaimed'; player: PlayerId; deed: string; points: number }
+    | { type: 'hostPassed'; to: PlayerId }
+    | { type: 'presence'; player: PlayerId; online: boolean }
+    | { type: 'turnSkipped'; player: PlayerId; by: PlayerId }
+    | { type: 'slapped'; by: PlayerId; target: PlayerId; bounced: boolean }
     | { type: 'shakedownResolved'; winner: PlayerId | null; loser: PlayerId | null; taken: Pack }
     | { type: 'healed'; player: PlayerId; hp: number }
     | { type: 'ambushed'; player: PlayerId; level: PathLevel; square: number; mob: string }

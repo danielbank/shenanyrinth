@@ -64,13 +64,16 @@ export async function startServer(options: ServerOptions = {}): Promise<RunningS
 
   io.on('connection', (socket) => {
     const token: unknown = socket.handshake.auth.token;
-    socket.data.playerId = table.playerFor(typeof token === 'string' && token ? token : socket.id);
-    socket.emit('view', table.view(socket.data.playerId));
+    const id = table.playerFor(typeof token === 'string' && token ? token : socket.id);
+    socket.data.playerId = id;
+    table.connected(id);
+    socket.emit('view', table.view(id));
+    socket.on('disconnect', () => table.disconnected(id));
 
     socket.on('action', (action: Action, ack: (res: { ok: boolean; error?: string }) => void) => {
       const reply = typeof ack === 'function' ? ack : () => {};
       try {
-        table.act(socket.data.playerId, action);
+        table.act(socket.data.playerId, table.stamp(action));
         reply({ ok: true });
       } catch (err) {
         reply({ ok: false, error: describe(err) });

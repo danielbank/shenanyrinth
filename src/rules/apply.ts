@@ -14,6 +14,7 @@ import { buy, deposit, train } from './errands.ts';
 import { acceptLost, useItem } from './items.ts';
 import { checkDeeds, drawDeeds } from './deeds.ts';
 import { legalActions } from './legal.ts';
+import { passHost, presence, skipTurn, slap } from './table.ts';
 import { discard } from './loot.ts';
 import { defend, startShakedown } from './shakedown.ts';
 import { allow, closeResponse, meddle, pass, resist, sway, SYSTEM } from './response.ts';
@@ -32,6 +33,10 @@ import type { Action, ActionResult, GameState, Player, PlayerId, Stats } from '.
 
 /** Actions whose parameters are free-form, so they are checked by hand instead of against the legal list. */
 const FREE_FORM = new Set<Action['type']>([
+  'passHost',
+  'presence',
+  'skipTurn',
+  'slap',
   'discard',
   'join',
   'setStats',
@@ -136,6 +141,15 @@ function handle(ctx: Ctx, actor: PlayerId, action: Action): void {
       return defend(ctx, action.approach);
     case 'discard':
       return discard(ctx, findPlayer(g, actor)!, action);
+    case 'passHost':
+      return passHost(ctx, actor, action.to);
+    case 'presence':
+      if (actor !== SYSTEM) throw new RuleError('Only the server reports who is online');
+      return presence(ctx, action.player, action.online);
+    case 'skipTurn':
+      return skipTurn(ctx, actor);
+    case 'slap':
+      return slap(ctx, actor, action.at);
     case 'endTurn':
       return endTurn(ctx);
   }
@@ -183,6 +197,7 @@ function join(ctx: Ctx, actor: PlayerId, action: Extract<Action, { type: 'join' 
     reachedDungeon: false,
     relic: false,
     dungeonStreak: 0,
+    lastSlapAt: null,
     shakeProtected: false,
     stoneskin: false,
   });
