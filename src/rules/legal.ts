@@ -38,7 +38,13 @@ export function legalActions(g: GameState, id: PlayerId): Action[] {
       break;
     case 'move': {
       const turn = g.turn;
-      if (turn.stuck) return itemOptions(g, p);
+      if (turn.stuck) {
+        return [
+          ...(turn.onFeature ? [{ type: 'takeFeature' as const }] : []),
+          ...ramOptions(g, p),
+          ...itemOptions(g, p),
+        ];
+      }
       out.push(...itemOptions(g, p));
       out.push(...stepOptions(g, p));
       if (turn.free || (turn.stepsLeft === 0 && turn.dexLeft > 0)) out.push({ type: 'stop' });

@@ -5,6 +5,7 @@ import {
   aGame,
   act,
   emptied,
+  withoutFeature,
   forceRolls,
   placed,
   player,
@@ -132,6 +133,7 @@ describe('Lost drops half the Pack', () => {
     const rows = [...OPEN];
     rows[4] = '├───┐───┤';
     let g = withTiles(aGame({ stats: [{ STR: 3, CON: 3 }] }), 'forest', rows);
+    g = withoutFeature(g, 'forest', s9(4, 4));
     g = placed(g, 'p1', 'forest', s9(3, 4), 'E');
     g = withTokens(g, 'forest', {});
     g = withPlayer(roll(g, 2), 'p1', (p) => {

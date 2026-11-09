@@ -75,7 +75,9 @@ export function useItem(ctx: Ctx, p: Player, action: Use): void {
 function spend(ctx: Ctx, p: Player, item: Item): void {
   if (item.charges !== undefined && --item.charges > 0) return;
   p.items = p.items.filter((it) => it !== item);
-  if (item.charges !== undefined) emit(ctx, { type: 'crumbled', player: p.id, kind: item.kind });
+  if (item.charges !== undefined) {
+    emit(ctx, { type: 'crumbled', player: p.id, kind: item.kind, only: [p.id] });
+  }
 }
 
 type Effect = (ctx: Ctx, p: Player, action: Use) => void;

@@ -87,8 +87,11 @@ export function stepCounts(board: Board, from: number): number[] {
 
 export function generateDungeon(g: GameState): Board {
   const board = emptyBoard(g, DUNGEON);
-  const side = DIRS[Math.floor(rnd(g) * 4)]!;
-  const up = edgeSquare(g, board.size, side);
+  const n = board.size;
+  const edges = board.tiles
+    .map((_, i) => i)
+    .filter((i) => i % n === 0 || i % n === n - 1 || i < n || i >= n * (n - 1));
+  const up = edges[Math.floor(rnd(g) * edges.length)]!;
   board.features[up] = { type: 'stairsUp' };
   const dist = stepCounts(board, up);
   const far = Math.max(...dist);

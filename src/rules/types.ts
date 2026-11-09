@@ -55,6 +55,8 @@ export interface Player {
   reachedDungeon: boolean;
   /** Carried 2 or more Artifacts into the Town at once. */
   relic: boolean;
+  /** Gold moved into the Keep by Depositing (the Guardian bonus is not Deposited). */
+  deposited: number;
   /** Turns in a row ended in the Dungeon. */
   dungeonStreak: number;
   /** Server time of this Player's last slap, for the cooldown. */
@@ -344,7 +346,7 @@ export type GameEvent = Base &
     | { type: 'used'; player: PlayerId; kind: ItemKind; square?: number; a?: number; b?: number }
     | { type: 'teleported'; player: PlayerId; level: LevelName; from: number; to: number }
     | { type: 'crumbled'; player: PlayerId; kind: ItemKind }
-    | { type: 'responseOpened'; id: number; dice: DieInPlay[]; eligible: PlayerId[] }
+    | { type: 'responseOpened'; id: number; dice: DieInPlay[] }
     | { type: 'swayed'; player: PlayerId; die: number; delta: number }
     | { type: 'meddled'; player: PlayerId; kind: ItemKind; dice: number[] }
     | { type: 'resisted'; player: PlayerId; against: PlayerId }

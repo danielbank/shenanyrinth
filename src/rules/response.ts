@@ -69,7 +69,6 @@ export function rollInPlay(
       type: 'responseOpened',
       id: w.id,
       dice: structuredClone(dice),
-      eligible: w.eligible,
     });
   }
   return dice;
@@ -166,7 +165,7 @@ export function meddle(ctx: Ctx, p: Player, action: Extract<Action, { type: 'use
 function spendCharge(ctx: Ctx, p: Player, item: Item): void {
   if (item.charges !== undefined && --item.charges > 0) return;
   p.items = p.items.filter((it) => it !== item);
-  emit(ctx, { type: 'crumbled', player: p.id, kind: item.kind });
+  emit(ctx, { type: 'crumbled', player: p.id, kind: item.kind, only: [p.id] });
 }
 
 function dieById(w: ResponseWindow, id: number): DieInPlay | undefined {

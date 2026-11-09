@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { applyAction, viewFor } from './index.ts';
 import {
+  withoutFeature,
   aGame,
   emptied,
   act,
@@ -31,7 +32,7 @@ function inForest(x: number, y: number, h: 'N' | 'E' | 'S' | 'W', row4?: string,
   const rows = [...OPEN];
   if (row4) rows[4] = row4;
   let g = aGame({ stats: [{ STR: 3, CON: 3, ...stats }] });
-  g = emptied(withTiles(g, 'forest', rows), 'forest');
+  g = withoutFeature(emptied(withTiles(g, 'forest', rows), 'forest'), 'forest', s9(4, 4));
   return placed(g, 'p1', 'forest', s9(x, y), h);
 }
 const roll = (g: GameState, n: number) => act(forceRolls(g, n), 'p1', { type: 'roll' });

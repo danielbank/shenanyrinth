@@ -3,6 +3,7 @@ import { emit, findPlayer, type Ctx } from './context.ts';
 import { SLAP_COOLDOWN_MS, SQUEAK_COOLDOWN_MS } from './data.ts';
 import { RuleError } from './errors.ts';
 import { die } from './rng.ts';
+import { defendIfAway } from './shakedown.ts';
 import { endTurn } from './turns.ts';
 import type { PlayerId } from './types.ts';
 
@@ -21,6 +22,7 @@ export function presence(ctx: Ctx, id: PlayerId, online: boolean): void {
   if (!p || p.online === online) return;
   p.online = online;
   emit(ctx, { type: 'presence', player: id, online });
+  defendIfAway(ctx);
   if (!online && g.hostId === id) {
     const seat = g.players.indexOf(p);
     const next = [...g.players.slice(seat + 1), ...g.players.slice(0, seat)].find((q) => q.online);

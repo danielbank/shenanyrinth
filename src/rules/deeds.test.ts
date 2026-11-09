@@ -14,6 +14,7 @@ import {
   withPlayer,
   withTiles,
   withTokens,
+  withoutFeature,
 } from './testing.ts';
 
 const OPEN = ['┌┬┬┬┬┬┬┬┐', ...Array.from({ length: 7 }, () => '├┼┼┼┼┼┼┼┤'), '└┴┴┴┴┴┴┴┘'];
@@ -221,8 +222,14 @@ describe('The Deeds', () => {
 describe('Claiming', () => {
   it('only the first Player to achieve a Deed scores it, and it shows who took it', () => {
     let g = withDeeds(aGame(), ['nestegg', 'sense', 'deep']);
-    g = withPlayer(g, 'p2', (p) => (p.keep = 6));
-    g = withPlayer(g, 'p1', (p) => (p.keep = 6));
+    g = withPlayer(g, 'p2', (p) => {
+      p.keep = 6;
+      p.deposited = 6;
+    });
+    g = withPlayer(g, 'p1', (p) => {
+      p.keep = 6;
+      p.deposited = 6;
+    });
     g = act(roll(g, 1), 'p1', { type: 'stop' });
     expect(claimed(g, 'nestegg')).toBe('p1');
     expect(viewFor(g, 'p2').deeds[0]).toMatchObject({ id: 'nestegg', claimedBy: 'p1', points: 3 });
@@ -232,14 +239,17 @@ describe('Claiming', () => {
 
   it('Deed points can’t be lost', () => {
     let g = withDeeds(aGame(), ['nestegg', 'sense', 'deep']);
-    g = withPlayer(g, 'p1', (p) => (p.keep = 6));
+    g = withPlayer(g, 'p1', (p) => {
+      p.keep = 6;
+      p.deposited = 6;
+    });
     g = act(roll(g, 1), 'p1', { type: 'stop' });
     const rows = [...OPEN];
     rows[4] = '├──┐────┤';
     g = act(g, 'p1', { type: 'endTurn' });
     g = act(roll(g, 1, 'p2'), 'p2', { type: 'stop' });
     g = act(g, 'p2', { type: 'endTurn' });
-    g = emptied(withTiles(g, 'forest', rows), 'forest');
+    g = withoutFeature(emptied(withTiles(g, 'forest', rows), 'forest'), 'forest', s9(3, 4));
     g = placed(g, 'p1', 'forest', s9(2, 4), 'E');
     g = withPlayer(roll(g, 2), 'p1', (p) => (p.pivots = 0));
     const res = applyAction(g, 'p1', { type: 'step', dir: 'E' });
@@ -250,7 +260,10 @@ describe('Claiming', () => {
 
   it('final scores include Deed points', () => {
     let g = withDeeds(aGame(), ['nestegg', 'sense', 'deep']);
-    g = withPlayer(g, 'p1', (p) => (p.keep = 6));
+    g = withPlayer(g, 'p1', (p) => {
+      p.keep = 6;
+      p.deposited = 6;
+    });
     g.round = 30;
     for (const id of ['p1', 'p2']) {
       g = act(roll(g, 1, id), id, { type: 'stop' });

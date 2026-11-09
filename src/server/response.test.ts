@@ -120,3 +120,16 @@ describe('The Response window timer', () => {
     expect(view.response).toBeNull();
   });
 });
+
+describe('Reloading with a window open', () => {
+  it('the timer starts again when a saved game reloads mid-window', async () => {
+    let g = aboutToClash();
+    g = act(g, 'p1', { type: 'exchange', approach: 'Fight' });
+    expect(g.response).not.toBeNull();
+    const time = fakeClock();
+    const { p2 } = await boot(g, time);
+    time.tick(8000);
+    const closed = await p2.view((v) => v.response === null);
+    expect(closed.clash?.last).not.toBeNull();
+  });
+});

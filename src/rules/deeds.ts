@@ -7,7 +7,7 @@ import type { GameState, Player } from './types.ts';
 const ACHIEVED: Record<string, (p: Player) => boolean> = {
   trailblazer: (p) => p.reachedDungeon,
   hunter: (p) => p.kills >= 3,
-  nestegg: (p) => p.keep >= 6,
+  nestegg: (p) => p.deposited >= 6,
   artist: (p) => p.shakedownWins >= 1,
   relic: (p) => p.relic,
   sense: (p) => p.cachesClaimed.length >= 1,

@@ -59,6 +59,18 @@ export function startShakedown(
   g.turn!.shookDown = true;
   g.shakedown = { attacker: p.id, defender: target, approach, defence: null, ram };
   emit(ctx, { type: 'shakedownStarted', attacker: p.id, defender: target, approach, ram });
+  defendIfAway(ctx);
+}
+
+/** An offline defender defends with their best Approach, so nobody waits on them. */
+export function defendIfAway(ctx: Ctx): void {
+  const s = ctx.g.shakedown;
+  const defender = s && !s.defence ? findPlayer(ctx.g, s.defender) : undefined;
+  if (!defender || defender.online) return;
+  const best = APPROACHES.reduce((a, b) =>
+    stat(defender, APPROACH_STAT[b]) > stat(defender, APPROACH_STAT[a]) ? b : a,
+  );
+  defend(ctx, best);
 }
 
 /** The defender picks an Approach; both roll 1d6 plus that Stat, face-up. */

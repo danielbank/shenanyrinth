@@ -110,7 +110,7 @@ describe('The client event queue', () => {
 
   it('when a Response window opens, the queue jumps straight to the dice', () => {
     let q = receive(createQueue(), aView(12, []));
-    const opened: GameEvent = { type: 'responseOpened', id: 1, dice: [], eligible: ['p1'] };
+    const opened: GameEvent = { type: 'responseOpened', id: 1, dice: [] };
     q = receive(q, aView(2, [stepped(12, 7), stepped(7, 2), opened]));
     expect(q.playing).toEqual(opened);
     expect(piecesShown(q).p1?.square).toBe(2);
@@ -151,7 +151,7 @@ describe('The client event queue', () => {
 
   it('fast-forwarding sounds only the event it jumps to', () => {
     let q = receive(createQueue(), aView(12, []));
-    const opened: GameEvent = { type: 'responseOpened', id: 1, dice: [], eligible: [] };
+    const opened: GameEvent = { type: 'responseOpened', id: 1, dice: [] };
     q = receive(q, aView(2, [stepped(12, 7), stepped(7, 2), opened]));
     expect(q.sounding).toEqual([opened]);
   });

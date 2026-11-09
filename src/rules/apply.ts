@@ -200,6 +200,7 @@ function join(ctx: Ctx, actor: PlayerId, action: Extract<Action, { type: 'join' 
     reachedDungeon: false,
     relic: false,
     dungeonStreak: 0,
+    deposited: 0,
     lastSlapAt: null,
     lastSqueakAt: null,
     shakeProtected: false,

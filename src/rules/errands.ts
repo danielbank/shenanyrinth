@@ -133,6 +133,7 @@ export function errandOptions(g: GameState, p: Player): Action[] {
 export function deposit(ctx: Ctx, p: Player, amount: number): void {
   p.pack.gold -= amount;
   p.keep += amount;
+  p.deposited += amount;
   emit(ctx, { type: 'deposited', player: p.id, amount });
 }
 

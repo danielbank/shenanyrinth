@@ -196,3 +196,14 @@ export function withItem(g: GameState, id: PlayerId, kind: ItemKind): GameState 
   player(copy, id).items.push(item);
   return copy;
 }
+
+/** Move a Feature off a square, for tests that need a plain square there. */
+export function withoutFeature(
+  g: GameState,
+  level: 'forest' | 'dungeon',
+  square: number,
+): GameState {
+  const copy = structuredClone(g);
+  delete copy.boards[level].features[square];
+  return copy;
+}

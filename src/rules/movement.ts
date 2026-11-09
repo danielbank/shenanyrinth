@@ -5,6 +5,7 @@ import { TOWN } from './data.ts';
 import { ambush, mobUnder } from './clash.ts';
 import { arriveInTown, sendHome } from './home.ts';
 import { collect } from './pickups.ts';
+import { ramOptions } from './shakedown.ts';
 import { die } from './rng.ts';
 import { findItem, stat } from './stats.ts';
 import { reveal } from './torchlight.ts';
@@ -105,7 +106,9 @@ function checkStuck(ctx: Ctx, p: Player): void {
   const turn = ctx.g.turn!;
   if (turn.free || turn.stepsLeft <= 0) return;
   if (moveOutlines(ctx.g, p).length > 0) return;
-  if (findItem(p, 'twirlwater')) turn.stuck = true;
+  // Twirlwater, a Gate or Stairs crossed, or a Ram all still come before being Lost.
+  const choices = findItem(p, 'twirlwater') || turn.onFeature || ramOptions(ctx.g, p).length > 0;
+  if (choices) turn.stuck = true;
   else becomeLost(ctx, p);
 }
 
@@ -118,6 +121,7 @@ export function endMove(ctx: Ctx): void {
   const turn = ctx.g.turn!;
   turn.stepsLeft = 0;
   turn.dexLeft = 0;
+  turn.stuck = false;
   turn.phase = 'after';
 }
 

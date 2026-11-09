@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import * as m from 'motion/react-m';
 import type { Dir, PathLevel, SquareView } from '../../../rules/index.ts';
 import { ARTIFACT, CHEST, COIN, HERB, PILE } from '../../art/itemSprites.ts';
 import { MOB_SPRITES } from '../../art/mobSprites.ts';
@@ -29,7 +30,7 @@ export const PathSquare = memo(function PathSquare({
   style: { left: number; top: number; width: number; height: number };
   onInspect: (square: number) => void;
 }) {
-  const cls = [styles.square, styles[level], square.revealed ? styles.lit : styles.fog];
+  const cls = [styles.square, styles[level]];
   return (
     <button
       type="button"
@@ -47,6 +48,12 @@ export const PathSquare = memo(function PathSquare({
         </span>
       ) : null}
       <Contents square={square} tile={tile} />
+      <m.span
+        className={styles.fogLayer}
+        initial={false}
+        animate={{ opacity: square.revealed ? 0 : 1 }}
+        transition={{ duration: 0.4 }}
+      />
       {square.feature?.type === 'gate' ? (
         <PixelArt sprite={GATE_SPRITE} size={`${tile}px`} label="Gate to the Town" />
       ) : null}

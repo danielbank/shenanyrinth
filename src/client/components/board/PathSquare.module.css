@@ -61,22 +61,18 @@
 .armW {
   left: 0;
 }
-.fog::after {
-  content: '';
+.fogLayer {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  transition: opacity 0.4s;
+  z-index: 1;
 }
-.forest.fog::after {
+.forest .fogLayer {
   background:
     radial-gradient(circle at 20% 20%, rgb(35 64 27 / 0.55) 18%, transparent 20%),
     radial-gradient(circle at 80% 75%, rgb(35 64 27 / 0.55) 16%, transparent 18%),
     rgb(20 40 16 / 0.35);
 }
-.dungeon.fog {
+.dungeon .fogLayer {
   background: #15121a;
-}
-.lit::after {
-  opacity: 0;
 }

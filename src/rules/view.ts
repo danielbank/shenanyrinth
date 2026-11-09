@@ -74,7 +74,12 @@ export function viewFor(state: GameState, viewer: PlayerId, events: GameEvent[] 
       dungeon: boardView(state.boards.dungeon, 'dungeon', mine),
     },
     clash: state.clash,
-    response: state.response,
+    // Who may act would reveal carried dice Charms, so each Player sees only themselves.
+    response: state.response && {
+      ...state.response,
+      eligible: state.response.eligible.filter((id) => id === viewer),
+      passed: state.response.passed.filter((id) => id === viewer),
+    },
     shakedown: state.shakedown,
     deeds: state.deeds.map((d) => ({
       ...DEEDS.find((x) => x.id === d.id)!,

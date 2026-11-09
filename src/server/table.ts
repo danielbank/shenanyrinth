@@ -29,6 +29,7 @@ export class Table {
       ...this.state,
       players: this.state.players.map((p) => ({ ...p, online: false })),
     };
+    this.watchResponseWindow();
   }
 
   private connections = new Map<PlayerId, number>();
