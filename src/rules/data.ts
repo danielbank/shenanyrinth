@@ -179,3 +179,17 @@ export const SPECIAL_GEAR = {
 } as const;
 
 export const TRAINING_PRICE: Price = { gold: 6, herbs: 1, artifacts: 1 };
+
+export const POTIONS = {
+  tonic: { name: 'Troll-Blood Tonic', gold: 2 },
+  draught: { name: 'Draught of Wandering', gold: 4 },
+  teleport: { name: 'Scroll of Teleportation', gold: 6 },
+  twirlwater: { name: 'Twirlwater', gold: 3 },
+} as const;
+
+export const CHARMS = {
+  orb: { name: 'Orb of Foresight', gold: 3 },
+  stones: { name: 'Shuffling Stones', gold: 4 },
+} as const;
+
+export const CHARM_CHARGES = 3;

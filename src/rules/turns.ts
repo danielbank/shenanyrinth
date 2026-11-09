@@ -26,6 +26,8 @@ export function startTurn(ctx: Ctx, seat: number): void {
     onFeature: false,
     choosingHeading: false,
     passed: [],
+    wander: false,
+    stuck: false,
   };
   const building = p.level === 'town' ? TOWN.buildings[p.square] : undefined;
   if (building) g.turn.passed.push(building);

@@ -14,15 +14,21 @@ export function Board({
   level,
   shown,
   settled,
+  picks,
+  onPick,
 }: {
   view: PlayerView;
   level: LevelName;
   shown: Record<string, PieceAt>;
   settled: boolean;
+  /** Squares picked while aiming an item, or null when not aiming. */
+  picks: number[] | null;
+  onPick: (square: number) => void;
 }) {
   const tile = 16 * useScale();
   const size = level === 'town' ? view.town.size : view.boards[level].size;
   const me = view.you ? shown[view.you] : undefined;
+  const picked = new Set(picks ?? []);
   return (
     <div
       className={`${styles.board} ${level === 'town' ? styles.town : ''}`}
@@ -51,6 +57,19 @@ export function Board({
           />
         ))}
       <Pieces view={view} shown={shown} level={level} size={size} tile={tile} />
+      {picks
+        ? squareIds(size).map((i) => (
+            <button
+              key={`pick-${i}`}
+              type="button"
+              aria-label={`Pick square ${i}`}
+              aria-pressed={picked.has(i)}
+              className={`${styles.pick} ${picked.has(i) ? styles.picked : ''}`}
+              style={place(i, size, tile)}
+              onClick={() => onPick(i)}
+            />
+          ))
+        : null}
       {settled && me?.level === level ? (
         <Controls view={view} at={me.square} size={size} tile={tile} />
       ) : null}

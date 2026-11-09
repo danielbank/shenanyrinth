@@ -28,7 +28,7 @@ export function roll(ctx: Ctx, p: Player): void {
   const value = die(ctx.g, 6);
   const dex = stat(p, 'DEX') > 0 ? 1 : 0;
   turn.roll = value;
-  turn.free = p.level === 'town';
+  turn.free = p.level === 'town' || turn.wander;
   turn.stepsLeft = turn.free ? value + dex : value;
   turn.dexLeft = turn.free ? 0 : dex;
   turn.phase = 'move';
@@ -39,7 +39,7 @@ export function roll(ctx: Ctx, p: Player): void {
 /** Every legal step from where the current Player stands. */
 export function moveOutlines(g: GameState, p: Player): MoveOutline[] {
   const turn = g.turn!;
-  if (turn.phase !== 'move' || turn.choosingHeading) return [];
+  if (turn.phase !== 'move' || turn.choosingHeading || turn.stuck) return [];
   const size = levelSize(g, p.level);
   const at = (dir: Dir) => neighbour(size, p.square, dir);
   if (turn.free) {
@@ -94,10 +94,14 @@ export function step(ctx: Ctx, p: Player, dir: Dir): void {
 function checkStuck(ctx: Ctx, p: Player): void {
   const turn = ctx.g.turn!;
   if (turn.free || turn.stepsLeft <= 0) return;
-  if (moveOutlines(ctx.g, p).length === 0) {
-    emit(ctx, { type: 'lost', player: p.id, level: p.level, square: p.square });
-    sendHome(ctx, p);
-  }
+  if (moveOutlines(ctx.g, p).length > 0) return;
+  if (findItem(p, 'twirlwater')) turn.stuck = true;
+  else becomeLost(ctx, p);
+}
+
+export function becomeLost(ctx: Ctx, p: Player): void {
+  emit(ctx, { type: 'lost', player: p.id, level: p.level, square: p.square });
+  sendHome(ctx, p);
 }
 
 export function endMove(ctx: Ctx): void {

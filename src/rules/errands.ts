@@ -2,6 +2,9 @@
 import { emit, type Ctx } from './context.ts';
 import {
   BASE_CAP,
+  CHARMS,
+  CHARM_CHARGES,
+  POTIONS,
   GEAR_NAMES,
   GEAR_PRICES,
   SLOTS,
@@ -49,7 +52,37 @@ function wares(p: Player): Record<string, Ware> {
       give: (g, q) => addItem(g, q, kind),
     };
   }
+  for (const kind of Object.keys(POTIONS) as (keyof typeof POTIONS)[]) {
+    out[kind] = {
+      name: POTIONS[kind].name,
+      at: 'apothecary',
+      price: { gold: POTIONS[kind].gold, herbs: 1 },
+      newSlot: true,
+      give: (g, q) => addItem(g, q, kind),
+    };
+  }
+  for (const kind of Object.keys(CHARMS) as (keyof typeof CHARMS)[]) {
+    for (const material of ['herbs', 'artifacts'] as const) {
+      out[`${kind}/${material}`] = {
+        name: CHARMS[kind].name,
+        at: 'arcanist',
+        price: { gold: CHARMS[kind].gold, [material]: 1 },
+        newSlot: true,
+        give: (g, q) => addItem(g, q, kind, CHARM_CHARGES),
+      };
+    }
+  }
   return out;
+}
+
+/** The ware key and buy action for an item id, splitting a Charm's Material off. */
+function wareKey(action: { item: string; material?: string }): string {
+  return action.material ? `${action.item}/${action.material}` : action.item;
+}
+
+function buyAction(key: string): Action {
+  const [item, material] = key.split('/') as [string, 'herbs' | 'artifacts' | undefined];
+  return material ? { type: 'buy', item, material } : { type: 'buy', item };
 }
 
 export function addItem(g: GameState, p: Player, kind: ItemKind, charges?: number): void {
@@ -86,7 +119,7 @@ export function errandOptions(g: GameState, p: Player): Action[] {
   for (const [item, ware] of Object.entries(wares(p))) {
     if (!passed.includes(ware.at) || ware.blocked) continue;
     if (ware.newSlot && slotsUsed(p) >= SLOTS) continue;
-    if (affordable(p, haggled(p, ware.price))) out.push({ type: 'buy', item });
+    if (affordable(p, haggled(p, ware.price))) out.push(buyAction(item));
   }
   if (passed.includes('guild') && affordable(p, haggled(p, TRAINING_PRICE))) {
     for (const s of STATS) {
@@ -103,8 +136,8 @@ export function deposit(ctx: Ctx, p: Player, amount: number): void {
   emit(ctx, { type: 'deposited', player: p.id, amount });
 }
 
-export function buy(ctx: Ctx, p: Player, item: string): void {
-  const ware = wares(p)[item]!;
+export function buy(ctx: Ctx, p: Player, item: string, material?: 'herbs' | 'artifacts'): void {
+  const ware = wares(p)[wareKey({ item, material })]!;
   pay(p, haggled(p, ware.price));
   ware.give(ctx.g, p);
   emit(ctx, { type: 'bought', player: p.id, item, only: [p.id] });
@@ -123,7 +156,7 @@ export function offers(g: GameState, p: Player): Offer[] {
   const all = wares(p);
   return errandOptions(g, p).flatMap((action): Offer[] => {
     if (action.type === 'buy') {
-      const ware = all[action.item]!;
+      const ware = all[wareKey(action)]!;
       return [{ action, name: ware.name, price: haggled(p, ware.price) }];
     }
     if (action.type === 'train') {

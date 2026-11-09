@@ -66,3 +66,15 @@
 .pivotBtn {
   color: var(--pivot);
 }
+
+.pick {
+  position: absolute;
+  z-index: 5;
+  padding: 0;
+  background: transparent;
+  border: 1px dotted color-mix(in srgb, var(--gold) 50%, transparent);
+}
+.picked {
+  background: color-mix(in srgb, var(--gold) 45%, transparent);
+  border: 2px solid var(--gold);
+}

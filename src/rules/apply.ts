@@ -11,14 +11,23 @@ import {
 import { RuleError } from './errors.ts';
 import { exchange, moveAway, resumeClash, retreat } from './clash.ts';
 import { buy, deposit, train } from './errands.ts';
+import { acceptLost, useItem } from './items.ts';
 import { legalActions } from './legal.ts';
-import { chooseHeading, compassTurn, endMove, roll, step, takeFeature } from './movement.ts';
+import {
+  becomeLost,
+  chooseHeading,
+  compassTurn,
+  endMove,
+  roll,
+  step,
+  takeFeature,
+} from './movement.ts';
 import { shuffle } from './rng.ts';
 import { endTurn, startTurn } from './turns.ts';
 import type { Action, ActionResult, GameState, Player, PlayerId, Stats } from './types.ts';
 
 /** Actions whose parameters are free-form, so they are checked by hand instead of against the legal list. */
-const FREE_FORM = new Set<Action['type']>(['join', 'setStats']);
+const FREE_FORM = new Set<Action['type']>(['join', 'setStats', 'use']);
 
 /** The rules engine's action seam: the next state plus the ordered list of what just happened. */
 export function applyAction(state: GameState, actor: PlayerId, action: Action): ActionResult {
@@ -75,11 +84,17 @@ function handle(ctx: Ctx, actor: PlayerId, action: Action): void {
     case 'moveAway':
       return moveAway(ctx);
     case 'buy':
-      return buy(ctx, me(g), action.item);
+      return buy(ctx, me(g), action.item, action.material);
     case 'train':
       return train(ctx, me(g), action.stat);
     case 'compass':
       return compassTurn(ctx, me(g), action.dir);
+    case 'use':
+      if (g.turn?.player !== actor || g.phase !== 'playing')
+        throw new RuleError("It's not your Turn");
+      return useItem(ctx, me(g), action);
+    case 'acceptLost':
+      return acceptLost(ctx, me(g), becomeLost);
     case 'endTurn':
       return endTurn(ctx);
   }

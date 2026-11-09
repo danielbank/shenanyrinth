@@ -1,0 +1,31 @@
+.bar {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 60vw;
+}
+.item {
+  font-size: 11px;
+  padding: 3px 6px;
+  background: var(--panel);
+}
+.idle {
+  opacity: 0.7;
+}
+.aim {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  transform: translateX(-50%);
+  z-index: 6;
+  background: var(--panel);
+  border: 3px solid var(--gold);
+  padding: 6px 8px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  max-width: calc(100% - 16px);
+  flex-wrap: wrap;
+}

@@ -97,6 +97,12 @@ function button(view: PlayerView, action: Action) {
           🧭{ARROW[action.dir]}
         </button>,
       ];
+    case 'acceptLost':
+      return [
+        <button key="lost" type="button" onClick={go}>
+          Accept being Lost
+        </button>,
+      ];
     case 'endTurn':
       return [
         <button key="end" type="button" onClick={go}>

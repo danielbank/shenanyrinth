@@ -72,7 +72,8 @@ export interface Board {
 
 export type PathLevel = 'forest' | 'dungeon';
 
-export type ItemKind = 'boots' | 'compass';
+export type ItemKind =
+  'boots' | 'compass' | 'tonic' | 'draught' | 'teleport' | 'twirlwater' | 'orb' | 'stones';
 
 export interface Item {
   id: number;
@@ -125,6 +126,10 @@ export interface Turn {
   choosingHeading: boolean;
   /** Town buildings passed this Turn, for Errands. */
   passed: Building[];
+  /** A Draught of Wandering is active: this Turn's move is free, as in the Town. */
+  wander: boolean;
+  /** About to be Lost, with a Twirlwater in hand. */
+  stuck: boolean;
 }
 
 export interface GameState {
@@ -158,6 +163,18 @@ export type Action =
   | { type: 'buy'; item: string; material?: 'herbs' | 'artifacts' }
   | { type: 'train'; stat: Stat }
   | { type: 'compass'; dir: Dir }
+  | {
+      type: 'use';
+      item: number;
+      /** Teleport destination, or the Orb's centre. */
+      square?: number;
+      /** Shuffling Stones: the two squares, and quarter turns for the Tile landing on each. */
+      a?: number;
+      b?: number;
+      turnA?: number;
+      turnB?: number;
+    }
+  | { type: 'acceptLost' }
   | { type: 'exchange'; approach: Approach }
   | { type: 'retreat' }
   | { type: 'resumeClash' }
@@ -205,6 +222,9 @@ export type GameEvent = Base &
     | { type: 'bought'; player: PlayerId; item: string }
     | { type: 'trained'; player: PlayerId; stat: Stat }
     | { type: 'compassTurned'; player: PlayerId; dir: Dir }
+    | { type: 'used'; player: PlayerId; kind: ItemKind; square?: number; a?: number; b?: number }
+    | { type: 'teleported'; player: PlayerId; level: LevelName; from: number; to: number }
+    | { type: 'crumbled'; player: PlayerId; kind: ItemKind }
     | { type: 'healed'; player: PlayerId; hp: number }
     | { type: 'ambushed'; player: PlayerId; level: PathLevel; square: number; mob: string }
     | {
@@ -327,6 +347,8 @@ export interface PlayerView {
   clash: Clash | null;
   final: { scores: Score[]; winners: PlayerId[] } | null;
   options: Action[];
+  /** Carried items the Player may use now that need a target square. */
+  aimable: Item[];
   /** Every legal purchase or Training, with its name and Haggled price. */
   offers: Offer[];
   /** Where each legal step leads, for outlining on the board. */

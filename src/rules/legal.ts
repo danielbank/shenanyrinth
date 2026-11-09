@@ -2,6 +2,7 @@
 import { currentPlayer } from './context.ts';
 import { clashOptions } from './clash.ts';
 import { errandOptions } from './errands.ts';
+import { itemOptions } from './items.ts';
 import { compassOptions, headingOptions, stepOptions } from './movement.ts';
 import type { Action, GameState, PlayerId } from './types.ts';
 
@@ -11,7 +12,7 @@ export function legalActions(g: GameState, id: PlayerId): Action[] {
   if (g.phase !== 'playing' || !g.turn) return out;
   const p = currentPlayer(g);
   if (!p || p.id !== id) return out;
-  if (g.clash) return clashOptions(g);
+  if (g.clash) return [...clashOptions(g), ...itemOptions(g, p)];
   switch (g.turn.phase) {
     case 'start':
       out.push({ type: 'resumeClash' }, { type: 'moveAway' });
@@ -19,9 +20,12 @@ export function legalActions(g: GameState, id: PlayerId): Action[] {
     case 'prepare':
       out.push({ type: 'roll' });
       out.push(...compassOptions(g, p));
+      out.push(...itemOptions(g, p));
       break;
     case 'move': {
       const turn = g.turn;
+      if (turn.stuck) return itemOptions(g, p);
+      out.push(...itemOptions(g, p));
       out.push(...stepOptions(g, p));
       if (turn.free || (turn.stepsLeft === 0 && turn.dexLeft > 0)) out.push({ type: 'stop' });
       if (turn.onFeature) out.push({ type: 'takeFeature' });
@@ -33,6 +37,7 @@ export function legalActions(g: GameState, id: PlayerId): Action[] {
         break;
       }
       if (g.turn.onFeature) out.push({ type: 'takeFeature' });
+      out.push(...itemOptions(g, p));
       out.push(...errandOptions(g, p));
       out.push({ type: 'endTurn' });
       break;

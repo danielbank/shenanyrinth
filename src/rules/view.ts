@@ -3,6 +3,7 @@ import { TOWN } from './data.ts';
 import { mobDef } from './clash.ts';
 import { currentPlayer } from './context.ts';
 import { offers } from './errands.ts';
+import { targetedItems } from './items.ts';
 import { legalActions } from './legal.ts';
 import { moveOutlines } from './movement.ts';
 import { publicScore, score, winners } from './score.ts';
@@ -70,6 +71,7 @@ export function viewFor(state: GameState, viewer: PlayerId, events: GameEvent[] 
     final:
       state.phase === 'over' ? { scores: state.players.map(score), winners: winners(state) } : null,
     options: legalActions(state, viewer),
+    aimable: mine ? targetedItems(state, mine) : [],
     offers:
       current?.id === viewer &&
       state.turn?.phase === 'after' &&

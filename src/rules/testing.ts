@@ -5,7 +5,7 @@
 import { applyAction } from './apply.ts';
 import { newGame } from './setup.ts';
 import { COLOURS, HEROES, TOWN } from './data.ts';
-import type { Action, GameEvent, GameState, PlayerId, Stats, Token } from './types.ts';
+import type { Action, GameEvent, GameState, ItemKind, PlayerId, Stats, Token } from './types.ts';
 
 export const NAMES = ['Ann', 'Bo', 'Cy', 'Di', 'Ed', 'Fay'];
 
@@ -182,5 +182,17 @@ export function emptied(g: GameState, level: 'forest' | 'dungeon'): GameState {
   board.mobs = {};
   board.tokens = {};
   board.piles = {};
+  return copy;
+}
+
+const CHARMS_WITH_CHARGES = new Set(['knucklebone', 'coin', 'hush', 'stones', 'orb']);
+
+/** Give a Player an item, as if bought. */
+export function withItem(g: GameState, id: PlayerId, kind: ItemKind): GameState {
+  const copy = structuredClone(g);
+  const item = CHARMS_WITH_CHARGES.has(kind)
+    ? { id: copy.nextItemId++, kind, charges: 3 }
+    : { id: copy.nextItemId++, kind };
+  player(copy, id).items.push(item);
   return copy;
 }
