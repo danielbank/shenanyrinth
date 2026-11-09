@@ -16,6 +16,7 @@ export function Board({
   settled,
   picks,
   onPick,
+  onInspect,
 }: {
   view: PlayerView;
   level: LevelName;
@@ -24,6 +25,8 @@ export function Board({
   /** Squares picked while aiming an item, or null when not aiming. */
   picks: number[] | null;
   onPick: (square: number) => void;
+  /** Tapping a square only ever opens its inspect card. */
+  onInspect: (square: number) => void;
 }) {
   const tile = 16 * useScale();
   const size = level === 'town' ? view.town.size : view.boards[level].size;
@@ -36,14 +39,16 @@ export function Board({
     >
       {squareIds(size).map((i) =>
         level === 'town' ? (
-          <TownSquare key={i} view={view} square={i} tile={tile} />
+          <TownSquare key={i} view={view} square={i} tile={tile} onInspect={onInspect} />
         ) : (
           <PathSquare
             key={i}
             level={level}
             square={view.boards[level].squares[i]!}
             tile={tile}
+            index={i}
             style={place(i, size, tile)}
+            onInspect={onInspect}
           />
         ),
       )}
@@ -88,17 +93,33 @@ function squareIds(size: number): number[] {
   return list;
 }
 
-function TownSquare({ view, square, tile }: { view: PlayerView; square: number; tile: number }) {
+function TownSquare({
+  view,
+  square,
+  tile,
+  onInspect,
+}: {
+  view: PlayerView;
+  square: number;
+  tile: number;
+  onInspect: (square: number) => void;
+}) {
   const building = view.town.buildings[square];
   const gate = view.town.gates[square];
   const label = building ? BUILDING_NAMES[building] : gate ? `Gate (${gate})` : 'Town square';
   return (
-    <div className={styles.square} style={place(square, view.town.size, tile)} title={label}>
+    <button
+      type="button"
+      className={styles.square}
+      style={place(square, view.town.size, tile)}
+      aria-label={label}
+      onClick={() => onInspect(square)}
+    >
       <span className={styles.cobble} />
       {building ? (
         <PixelArt sprite={BUILDING_SPRITES[building]} size={`${tile}px`} label={label} />
       ) : null}
       {gate ? <PixelArt sprite={GATE_SPRITE} size={`${tile}px`} label={label} /> : null}
-    </div>
+    </button>
   );
 }

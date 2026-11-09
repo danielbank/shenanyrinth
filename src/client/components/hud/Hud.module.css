@@ -59,6 +59,8 @@
   font-size: 12px;
 }
 .chip {
+  font-size: 12px;
+  cursor: help;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -67,6 +69,9 @@
   border: 2px solid var(--outline);
 }
 .vitals {
+  font-family: var(--font);
+  color: var(--ink);
+  cursor: pointer;
   display: flex;
   gap: 8px;
   align-items: center;

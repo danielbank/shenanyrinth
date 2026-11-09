@@ -1,0 +1,14 @@
+.glyph {
+  display: inline-block;
+  vertical-align: middle;
+  image-rendering: pixelated;
+}
+.badge {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  background: #472d3c;
+  border: 2px solid var(--outline);
+  box-shadow: inset 0 -3px 0 rgb(0 0 0 / 0.3);
+}

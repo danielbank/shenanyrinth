@@ -2,8 +2,6 @@
   display: flex;
   gap: 4px;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  max-width: 60vw;
 }
 .item {
   font-size: 11px;
@@ -12,6 +10,15 @@
 }
 .idle {
   opacity: 0.7;
+}
+.slot {
+  display: inline-flex;
+}
+.use {
+  font-size: 11px;
+  padding: 3px 6px;
+  background: var(--free);
+  color: var(--outline);
 }
 .aim {
   position: absolute;

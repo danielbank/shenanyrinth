@@ -9,7 +9,15 @@ export interface Aim {
 }
 
 /** Your carried items: tap to use, or to aim at squares on the board. */
-export function ItemBar({ view, onAim }: { view: PlayerView; onAim: (aim: Aim) => void }) {
+export function ItemBar({
+  view,
+  onAim,
+  onInspect,
+}: {
+  view: PlayerView;
+  onAim: (aim: Aim) => void;
+  onInspect: (item: number) => void;
+}) {
   const items = view.me?.items ?? [];
   if (items.length === 0) return null;
   return (
@@ -18,28 +26,29 @@ export function ItemBar({ view, onAim }: { view: PlayerView; onAim: (aim: Aim) =
         const ready = view.options.find((o) => o.type === 'use' && o.item === item.id);
         const aimable = view.aimable.some((a) => a.id === item.id);
         const label = `${itemName(item.kind)}${item.charges !== undefined ? ` ×${item.charges}` : ''}`;
-        if (ready) {
-          return (
-            <button key={item.id} type="button" className={styles.item} onClick={() => send(ready)}>
-              Use {label}
-            </button>
-          );
-        }
-        if (aimable) {
-          return (
-            <button
-              key={item.id}
-              type="button"
-              className={styles.item}
-              onClick={() => onAim({ item, picks: [] })}
-            >
-              Use {label}…
-            </button>
-          );
-        }
         return (
-          <span key={item.id} className={`${styles.item} ${styles.idle}`}>
-            {label}
+          <span key={item.id} className={styles.slot}>
+            <button
+              type="button"
+              className={`${styles.item} ${ready || aimable ? '' : styles.idle}`}
+              onClick={() => onInspect(item.id)}
+            >
+              {label}
+            </button>
+            {ready ? (
+              <button type="button" className={styles.use} onClick={() => send(ready)}>
+                Use
+              </button>
+            ) : null}
+            {aimable ? (
+              <button
+                type="button"
+                className={styles.use}
+                onClick={() => onAim({ item, picks: [] })}
+              >
+                Use…
+              </button>
+            ) : null}
           </span>
         );
       })}

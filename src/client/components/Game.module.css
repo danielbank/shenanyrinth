@@ -25,6 +25,18 @@
   left: 8px;
   bottom: calc(8px + env(safe-area-inset-bottom, 0px));
   z-index: 3;
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  max-width: calc(100% - 140px);
+}
+.badgeButton {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.alert {
+  filter: drop-shadow(0 0 4px var(--danger));
 }
 .bottomRight {
   position: absolute;

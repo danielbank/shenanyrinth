@@ -18,16 +18,26 @@ export const PathSquare = memo(function PathSquare({
   level,
   square,
   tile,
+  index,
   style,
+  onInspect,
 }: {
   level: PathLevel;
   square: SquareView;
   tile: number;
+  index: number;
   style: { left: number; top: number; width: number; height: number };
+  onInspect: (square: number) => void;
 }) {
   const cls = [styles.square, styles[level], square.revealed ? styles.lit : styles.fog];
   return (
-    <div className={cls.join(' ')} style={style}>
+    <button
+      type="button"
+      className={cls.join(' ')}
+      style={style}
+      aria-label={`Inspect square ${index}`}
+      onClick={() => onInspect(index)}
+    >
       {square.exits ? (
         <span className={styles.path}>
           <span className={styles.hub} />
@@ -50,7 +60,7 @@ export const PathSquare = memo(function PathSquare({
       {square.feature?.type === 'stairsUp' ? (
         <PixelArt sprite={STAIRS_UP_SPRITE} size={`${tile}px`} label="Stairs up to the Forest" />
       ) : null}
-    </div>
+    </button>
   );
 });
 
