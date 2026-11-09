@@ -1,35 +1,46 @@
-import type { PlayerView } from '../../../rules/index.ts';
+import type { LevelName, PlayerView } from '../../../rules/index.ts';
 import type { PieceAt } from '../../eventQueue.ts';
 import { useScale } from '../../useScale.ts';
 import { BUILDING_NAMES, BUILDING_SPRITES, GATE_SPRITE } from '../../art/townSprites.ts';
 import { PixelArt } from '../PixelArt.tsx';
 import { Controls } from './Controls.tsx';
 import { place } from './geometry.ts';
+import { PathSquare } from './PathSquare.tsx';
 import { Pieces } from './Pieces.tsx';
 import styles from './Board.module.css';
 
 export function Board({
   view,
+  level,
   shown,
   settled,
 }: {
   view: PlayerView;
+  level: LevelName;
   shown: Record<string, PieceAt>;
   settled: boolean;
 }) {
   const tile = 16 * useScale();
-  const level = 'town';
-  const size = view.town.size;
-  const squares = Array.from({ length: size * size }, (_, i) => i);
+  const size = level === 'town' ? view.town.size : view.boards[level].size;
   const me = view.you ? shown[view.you] : undefined;
   return (
     <div
-      className={`${styles.board} ${styles.town}`}
+      className={`${styles.board} ${level === 'town' ? styles.town : ''}`}
       style={{ width: size * tile, height: size * tile }}
     >
-      {squares.map((i) => (
-        <TownSquare key={i} view={view} square={i} tile={tile} />
-      ))}
+      {squareIds(size).map((i) =>
+        level === 'town' ? (
+          <TownSquare key={i} view={view} square={i} tile={tile} />
+        ) : (
+          <PathSquare
+            key={i}
+            level={level}
+            square={view.boards[level].squares[i]!}
+            tile={tile}
+            style={place(i, size, tile)}
+          />
+        ),
+      )}
       {view.moves
         .filter((m) => m.level === level)
         .map((m) => (
@@ -45,6 +56,17 @@ export function Board({
       ) : null}
     </div>
   );
+}
+
+const ids = new Map<number, number[]>();
+/** The square numbers of a board, built once per size. */
+function squareIds(size: number): number[] {
+  let list = ids.get(size);
+  if (!list) {
+    list = Array.from({ length: size * size }, (_, i) => i);
+    ids.set(size, list);
+  }
+  return list;
 }
 
 function TownSquare({ view, square, tile }: { view: PlayerView; square: number; tile: number }) {

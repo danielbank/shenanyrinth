@@ -57,6 +57,23 @@ function button(view: PlayerView, action: Action) {
           Stop
         </button>,
       ];
+    case 'takeFeature':
+      return [
+        <button key="take" type="button" onClick={go}>
+          {takeLabel(view)}
+        </button>,
+      ];
+    case 'chooseHeading':
+      return [
+        <button
+          key={`heading-${action.dir}`}
+          type="button"
+          aria-label={`Set off ${action.dir}`}
+          onClick={go}
+        >
+          ⇢{ARROW[action.dir]}
+        </button>,
+      ];
     case 'endTurn':
       return [
         <button key="end" type="button" onClick={go}>
@@ -66,4 +83,9 @@ function button(view: PlayerView, action: Action) {
     default:
       return [];
   }
+}
+
+function takeLabel(view: PlayerView): string {
+  const me = view.players.find((p) => p.id === view.you);
+  return me?.level === 'town' ? 'Take the Gate' : 'Take the Gate to Town';
 }

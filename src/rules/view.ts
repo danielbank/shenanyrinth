@@ -7,7 +7,15 @@ import { publicScore, score, winners } from './score.ts';
 import { maxHp, stat } from './stats.ts';
 import { STATS } from './data.ts';
 import { doomLimit } from './turns.ts';
-import type { GameEvent, GameState, PlayerId, PlayerView, Stats } from './types.ts';
+import type {
+  Board,
+  BoardView,
+  GameEvent,
+  GameState,
+  PlayerId,
+  PlayerView,
+  Stats,
+} from './types.ts';
 
 export function viewFor(state: GameState, viewer: PlayerId, events: GameEvent[] = []): PlayerView {
   const mine = state.players.find((p) => p.id === viewer);
@@ -39,10 +47,25 @@ export function viewFor(state: GameState, viewer: PlayerId, events: GameEvent[] 
     doomLimit: doomLimit(state),
     turn: state.turn,
     town: { size: TOWN.size, buildings: TOWN.buildings, gates: TOWN.gates },
+    boards: {
+      forest: boardView(state.boards.forest),
+      dungeon: boardView(state.boards.dungeon),
+    },
     final:
       state.phase === 'over' ? { scores: state.players.map(score), winners: winners(state) } : null,
     options: legalActions(state, viewer),
     moves: current && current.id === viewer ? moveOutlines(state, current) : [],
     events: events.filter((e) => !e.only || e.only.includes(viewer)),
+  };
+}
+
+function boardView(board: Board): BoardView {
+  return {
+    size: board.size,
+    squares: board.tiles.map((exits, i) => ({
+      exits,
+      revealed: board.revealed[i] ?? false,
+      feature: board.features[i] ?? null,
+    })),
   };
 }

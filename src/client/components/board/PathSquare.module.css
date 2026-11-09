@@ -1,0 +1,77 @@
+.square {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.forest {
+  --path: var(--dirt);
+  background-color: var(--grass);
+  background-image: radial-gradient(circle at 25% 75%, #4c7a30 1px, transparent 1.5px);
+  background-size: calc(var(--tile) / 2) calc(var(--tile) / 2);
+}
+.dungeon {
+  --path: var(--stone);
+  background-color: var(--rock);
+  background-image: radial-gradient(circle at 70% 30%, #2b262f 1px, transparent 1.5px);
+  background-size: calc(var(--tile) / 2) calc(var(--tile) / 2);
+}
+.path {
+  position: absolute;
+  inset: 0;
+}
+.hub,
+.arm {
+  position: absolute;
+  background: var(--path);
+  box-shadow: inset 0 0 0 calc(var(--scale) * 1px) color-mix(in srgb, var(--path) 70%, black);
+}
+.hub {
+  left: 31.25%;
+  top: 31.25%;
+  width: 37.5%;
+  height: 37.5%;
+}
+.armN,
+.armS {
+  left: 31.25%;
+  width: 37.5%;
+  height: 40%;
+}
+.armN {
+  top: 0;
+}
+.armS {
+  bottom: 0;
+}
+.armE,
+.armW {
+  top: 31.25%;
+  height: 37.5%;
+  width: 40%;
+}
+.armE {
+  right: 0;
+}
+.armW {
+  left: 0;
+}
+.fog::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: opacity 0.4s;
+}
+.forest.fog::after {
+  background:
+    radial-gradient(circle at 30% 30%, #2f5a24 30%, transparent 32%),
+    radial-gradient(circle at 70% 65%, #2f5a24 28%, transparent 30%),
+    color-mix(in srgb, #23401b 55%, transparent);
+}
+.dungeon.fog {
+  background: #15121a;
+}
+.lit::after {
+  opacity: 0;
+}

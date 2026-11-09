@@ -82,3 +82,56 @@ export function withPlayer(
   change(player(copy, id));
   return copy;
 }
+
+const GLYPHS: Record<string, string> = {
+  '│': 'NS',
+  '─': 'EW',
+  '└': 'NE',
+  '┌': 'ES',
+  '┐': 'SW',
+  '┘': 'NW',
+  '├': 'NES',
+  '┬': 'ESW',
+  '┤': 'NSW',
+  '┴': 'NEW',
+  '┼': 'NESW',
+};
+
+/** Tiles from rows of box-drawing glyphs, e.g. ['┌─┐', '│┼│', '└─┘']. */
+export function tilesFrom(rows: string[]): string[] {
+  return rows.flatMap((row) =>
+    [...row].map((ch) => {
+      const exits = GLYPHS[ch];
+      if (!exits) throw new Error(`unknown glyph ${ch}`);
+      return exits;
+    }),
+  );
+}
+
+/** Replace a Level's Tiles with a drawn board; Features stay where they are. */
+export function withTiles(g: GameState, level: 'forest' | 'dungeon', rows: string[]): GameState {
+  const copy = structuredClone(g);
+  const board = copy.boards[level];
+  const tiles = tilesFrom(rows);
+  if (tiles.length !== board.size * board.size) throw new Error('board size mismatch');
+  board.tiles = tiles;
+  return copy;
+}
+
+/** Put a Player somewhere with a Heading. */
+export function placed(
+  g: GameState,
+  id: PlayerId,
+  level: 'town' | 'forest' | 'dungeon',
+  square: number,
+  heading: 'N' | 'E' | 'S' | 'W' = 'N',
+): GameState {
+  return withPlayer(g, id, (p) => {
+    p.level = level;
+    p.square = square;
+    p.heading = heading;
+  });
+}
+
+/** A square index from (x, y). */
+export const sq = (size: number, x: number, y: number) => y * size + x;

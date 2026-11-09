@@ -36,6 +36,20 @@ export interface Player {
   pivots: number;
 }
 
+/** A fixed thing on a square; it stays put when Tiles are swapped. */
+export type Feature = { type: 'gate'; side: Dir };
+
+export interface Board {
+  size: number;
+  /** Each square's Exits, in N E S W order, e.g. 'NS'. */
+  tiles: string[];
+  /** Squares revealed by Torchlight, permanently and for everyone. */
+  revealed: boolean[];
+  features: Record<number, Feature>;
+}
+
+export type PathLevel = 'forest' | 'dungeon';
+
 export type Phase = 'lobby' | 'setup' | 'playing' | 'over';
 export type TurnPhase = 'prepare' | 'move' | 'after';
 
@@ -44,8 +58,14 @@ export interface Turn {
   phase: TurnPhase;
   roll: number | null;
   stepsLeft: number;
+  /** The optional DEX square still to come (path Levels). */
+  dexLeft: number;
   /** Moving freely, as in the Town: any direction, up to the steps left. */
   free: boolean;
+  /** Standing on a Gate or Stairs that this move crossed, so it may be taken. */
+  onFeature: boolean;
+  /** Just arrived on a path Level: the Player chooses a Heading. */
+  choosingHeading: boolean;
 }
 
 export interface GameState {
@@ -59,6 +79,7 @@ export interface GameState {
   seats: PlayerId[];
   round: number;
   turn: Turn | null;
+  boards: Record<PathLevel, Board>;
 }
 
 export type Action =
@@ -68,6 +89,8 @@ export type Action =
   | { type: 'roll' }
   | { type: 'step'; dir: Dir }
   | { type: 'stop' }
+  | { type: 'takeFeature' }
+  | { type: 'chooseHeading'; dir: Dir }
   | { type: 'endTurn' };
 
 interface Base {
@@ -89,6 +112,14 @@ export type GameEvent = Base &
         to: number;
         dir: Dir;
       }
+    | {
+        type: 'travelled';
+        player: PlayerId;
+        from: { level: LevelName; square: number };
+        to: { level: LevelName; square: number };
+      }
+    | { type: 'headingChosen'; player: PlayerId; dir: Dir }
+    | { type: 'lost'; player: PlayerId; level: LevelName; square: number }
     | { type: 'turnEnded'; player: PlayerId }
     | { type: 'roundEnded'; round: number }
     | { type: 'gameOver'; winners: PlayerId[] }
@@ -139,6 +170,18 @@ export interface MoveOutline {
   pivot: boolean;
 }
 
+export interface SquareView {
+  /** null while the Tile is hidden in the dark. */
+  exits: string | null;
+  revealed: boolean;
+  feature: Feature | null;
+}
+
+export interface BoardView {
+  size: number;
+  squares: SquareView[];
+}
+
 export interface PlayerView {
   you: PlayerId | null;
   phase: Phase;
@@ -149,6 +192,7 @@ export interface PlayerView {
   doomLimit: number;
   turn: Turn | null;
   town: TownView;
+  boards: Record<PathLevel, BoardView>;
   final: { scores: Score[]; winners: PlayerId[] } | null;
   options: Action[];
   /** Where each legal step leads, for outlining on the board. */

@@ -15,7 +15,16 @@ export function startTurn(ctx: Ctx, seat: number): void {
   const { g } = ctx;
   const p = findPlayer(g, g.seats[seat]!)!;
   p.pivots = PIVOT_LIMIT;
-  g.turn = { player: p.id, phase: 'prepare', roll: null, stepsLeft: 0, free: false };
+  g.turn = {
+    player: p.id,
+    phase: 'prepare',
+    roll: null,
+    stepsLeft: 0,
+    dexLeft: 0,
+    free: false,
+    onFeature: false,
+    choosingHeading: false,
+  };
   emit(ctx, { type: 'turnStarted', player: p.id, round: g.round });
 }
 

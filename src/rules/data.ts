@@ -26,3 +26,30 @@ export const TOWN = {
   } as Record<number, Building>,
   gates: { 2: 'N', 10: 'W', 14: 'E', 22: 'S' } as Record<number, Dir>,
 };
+
+export type TileShape = 'straight' | 'bend' | 't' | 'cross';
+export const SHAPES: Record<TileShape, string> = {
+  straight: 'NS',
+  bend: 'NE',
+  t: 'ESW',
+  cross: 'NESW',
+};
+
+export interface LevelConfig {
+  size: number;
+  mix: Record<TileShape, number>;
+  /** Chance that a non-corner edge square is an inward T-junction. */
+  edgeT: number;
+}
+
+export const FOREST: LevelConfig = {
+  size: 9,
+  mix: { straight: 50, bend: 20, t: 20, cross: 10 },
+  edgeT: 0.5,
+};
+
+export const DUNGEON: LevelConfig = {
+  size: 7,
+  mix: { straight: 5, bend: 75, t: 15, cross: 5 },
+  edgeT: 0.5,
+};

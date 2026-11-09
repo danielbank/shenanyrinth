@@ -10,7 +10,7 @@ import {
 } from './data.ts';
 import { RuleError } from './errors.ts';
 import { legalActions } from './legal.ts';
-import { endMove, roll, step } from './movement.ts';
+import { chooseHeading, endMove, roll, step, takeFeature } from './movement.ts';
 import { shuffle } from './rng.ts';
 import { endTurn, startTurn } from './turns.ts';
 import type { Action, ActionResult, GameState, Player, PlayerId, Stats } from './types.ts';
@@ -58,6 +58,10 @@ function handle(ctx: Ctx, actor: PlayerId, action: Action): void {
       return step(ctx, me(g), action.dir);
     case 'stop':
       return endMove(ctx);
+    case 'takeFeature':
+      return takeFeature(ctx, me(g));
+    case 'chooseHeading':
+      return chooseHeading(ctx, me(g), action.dir);
     case 'endTurn':
       return endTurn(ctx);
   }

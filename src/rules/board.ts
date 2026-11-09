@@ -12,3 +12,13 @@ export function neighbour(size: number, square: number, dir: Dir): number {
   const y = Math.floor(square / size) + dy;
   return x < 0 || y < 0 || x >= size || y >= size ? -1 : y * size + x;
 }
+
+const ORDER: Record<Dir, number> = { N: 0, E: 1, S: 2, W: 3 };
+
+/** Exits turned clockwise by k quarter turns, in N E S W order. */
+export function rotate(exits: string, k: number): string {
+  return [...exits]
+    .map((d) => DIRS[(ORDER[d as Dir] + k) % 4]!)
+    .sort((a, b) => ORDER[a] - ORDER[b])
+    .join('');
+}
