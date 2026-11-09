@@ -1,0 +1,68 @@
+.board {
+  position: relative;
+  border: 3px solid var(--outline);
+  box-shadow: 0 0 0 3px #6b5a4a;
+}
+.square {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: default;
+}
+.town {
+  background-color: var(--grass);
+  background-image:
+    radial-gradient(circle at 30% 30%, #6c9c48 1px, transparent 1.5px),
+    radial-gradient(circle at 70% 60%, #4c7a30 1px, transparent 1.5px);
+  background-size: calc(var(--tile) / 2) calc(var(--tile) / 2);
+}
+.cobble {
+  position: absolute;
+  inset: 18%;
+  background: #c9b48f;
+  border-radius: 2px;
+  opacity: 0.55;
+}
+.outline {
+  position: absolute;
+  inset: 1px;
+  pointer-events: none;
+  border: 3px dashed var(--free);
+}
+.pivot {
+  border-color: var(--pivot);
+}
+.piece {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  filter: drop-shadow(0 2px 0 rgb(0 0 0 / 0.35));
+}
+.controls {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  gap: 4px;
+  transform: translate(-50%, -110%);
+  white-space: nowrap;
+}
+.controls button {
+  padding: 4px 8px;
+  font-size: 14px;
+  background: var(--panel);
+  box-shadow: 0 2px 0 var(--outline);
+}
+.free {
+  color: var(--free);
+}
+.pivotBtn {
+  color: var(--pivot);
+}

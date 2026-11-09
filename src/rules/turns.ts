@@ -1,0 +1,45 @@
+/** Seats, Turns, Rounds and the end of the game. */
+import { emit, findPlayer, type Ctx } from './context.ts';
+import { DOOM_TRACK } from './data.ts';
+import { winners } from './score.ts';
+import type { GameState } from './types.ts';
+
+export const PIVOT_LIMIT = 2;
+
+export function doomLimit(g: GameState): number {
+  return DOOM_TRACK[g.players.length] ?? 30;
+}
+
+/** Start: refresh the current seat's budgets, then Prepare. */
+export function startTurn(ctx: Ctx, seat: number): void {
+  const { g } = ctx;
+  const p = findPlayer(g, g.seats[seat]!)!;
+  p.pivots = PIVOT_LIMIT;
+  g.turn = { player: p.id, phase: 'prepare', roll: null, stepsLeft: 0, free: false };
+  emit(ctx, { type: 'turnStarted', player: p.id, round: g.round });
+}
+
+/** End: pass play to the next seat, advancing the Doom Track after the last one. */
+export function endTurn(ctx: Ctx): void {
+  const { g } = ctx;
+  const turn = g.turn!;
+  emit(ctx, { type: 'turnEnded', player: turn.player });
+  const seat = g.seats.indexOf(turn.player);
+  if (seat === g.seats.length - 1) {
+    emit(ctx, { type: 'roundEnded', round: g.round });
+    if (g.round >= doomLimit(g)) {
+      finish(ctx);
+      return;
+    }
+    g.round++;
+    startTurn(ctx, 0);
+  } else {
+    startTurn(ctx, seat + 1);
+  }
+}
+
+function finish(ctx: Ctx): void {
+  ctx.g.phase = 'over';
+  ctx.g.turn = null;
+  emit(ctx, { type: 'gameOver', winners: winners(ctx.g) });
+}

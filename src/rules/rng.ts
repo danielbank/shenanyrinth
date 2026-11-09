@@ -15,12 +15,6 @@ export function die(g: GameState, faces: number): number {
   return 1 + Math.floor(rnd(g) * faces);
 }
 
-export function pick<T>(g: GameState, items: readonly T[]): T {
-  const item = items[Math.floor(rnd(g) * items.length)];
-  if (item === undefined) throw new Error('pick from an empty list');
-  return item;
-}
-
 export function shuffle<T>(g: GameState, items: T[]): T[] {
   for (let i = items.length - 1; i > 0; i--) {
     const j = Math.floor(rnd(g) * (i + 1));

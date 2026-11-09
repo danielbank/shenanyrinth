@@ -1,9 +1,21 @@
-import { useSyncExternalStore } from 'react';
-import { viewStore } from './socket.ts';
+import { LazyMotion, MotionConfig, domAnimation } from 'motion/react';
 import { Lobby } from './components/Lobby.tsx';
+import { StatSetup } from './components/StatSetup.tsx';
+import { Game } from './components/Game.tsx';
+import { useGame, useQueueClock } from './useGame.ts';
 
 export function App() {
-  const view = useSyncExternalStore(viewStore.subscribe, viewStore.get);
+  useQueueClock();
+  const { view } = useGame();
   if (!view) return <p>Connecting…</p>;
-  return <Lobby view={view} />;
+  const me = view.players.find((p) => p.id === view.you);
+  return (
+    <LazyMotion features={domAnimation} strict>
+      <MotionConfig reducedMotion="user">
+        {view.phase === 'lobby' || !me ? <Lobby view={view} /> : null}
+        {view.phase === 'setup' && me ? <StatSetup view={view} /> : null}
+        {(view.phase === 'playing' || view.phase === 'over') && me ? <Game view={view} /> : null}
+      </MotionConfig>
+    </LazyMotion>
+  );
 }

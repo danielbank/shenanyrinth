@@ -4,6 +4,7 @@ import type { AddressInfo } from 'node:net';
 import express from 'express';
 import { Server } from 'socket.io';
 import { RuleError, type Action } from '../rules/index.ts';
+import { loadSnapshot, saveSnapshot } from './save.ts';
 import { Table } from './table.ts';
 
 export interface ServerOptions {
@@ -11,6 +12,8 @@ export interface ServerOptions {
   /** Folder of the built client to serve, if any. */
   clientDir?: string;
   seed?: number;
+  /** Folder to save the game in after every change; reloaded on start. */
+  saveDir?: string;
 }
 
 export interface RunningServer {
@@ -31,7 +34,9 @@ export async function startServer(options: ServerOptions = {}): Promise<RunningS
   if (options.clientDir) app.use(express.static(options.clientDir));
   const http = createServer(app);
   const io = new Server(http);
-  const table = new Table(undefined, options.seed);
+  const { saveDir } = options;
+  const table = new Table(saveDir ? loadSnapshot(saveDir) : undefined, options.seed);
+  if (saveDir) table.onChange(() => saveSnapshot(saveDir, table.snapshot()));
 
   table.onChange((events) => {
     for (const socket of io.sockets.sockets.values()) {

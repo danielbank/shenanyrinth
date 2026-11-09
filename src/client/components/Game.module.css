@@ -1,0 +1,42 @@
+.shell {
+  position: relative;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+}
+.top {
+  display: grid;
+  gap: 4px;
+  padding: 6px 8px;
+  background: linear-gradient(var(--panel), color-mix(in srgb, var(--panel) 70%, transparent));
+  border-bottom: 2px solid var(--outline);
+  z-index: 2;
+}
+.stage {
+  position: relative;
+  overflow: auto;
+  display: grid;
+  place-items: center;
+  padding: 56px 8px 96px;
+}
+.bottomLeft {
+  position: absolute;
+  left: 8px;
+  bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  z-index: 3;
+}
+.bottomRight {
+  position: absolute;
+  right: 8px;
+  bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  gap: 6px;
+  z-index: 3;
+}
+.skip {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+}

@@ -1,0 +1,78 @@
+.row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 2px;
+}
+.avatar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px 2px 2px;
+  background: var(--panel-2);
+  border: 2px solid var(--outline);
+  white-space: nowrap;
+  font-size: 12px;
+}
+.current {
+  box-shadow:
+    0 0 0 2px var(--gold),
+    0 0 10px var(--gold);
+}
+.offline {
+  opacity: 0.45;
+}
+.tag {
+  position: absolute;
+  top: -8px;
+  right: -4px;
+  background: var(--gold);
+  color: var(--outline);
+  font-size: 9px;
+  font-weight: bold;
+  padding: 0 3px;
+}
+.score {
+  color: var(--gold);
+  font-weight: bold;
+}
+.crumbs {
+  display: flex;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--ink-dim);
+  flex-wrap: wrap;
+}
+.crumbOn {
+  color: var(--ink);
+  font-weight: bold;
+  text-decoration: underline;
+}
+.chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 12px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background: var(--ground);
+  border: 2px solid var(--outline);
+}
+.vitals {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 8px;
+  background: var(--panel);
+  border: 2px solid var(--outline);
+  font-size: 13px;
+}
+.hp {
+  color: var(--danger);
+}

@@ -1,0 +1,27 @@
+.die {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  font-weight: bold;
+  font-size: 13px;
+  color: var(--outline);
+  background: var(--ink);
+  filter: drop-shadow(1px 0 0 var(--outline)) drop-shadow(-1px 0 0 var(--outline))
+    drop-shadow(0 1px 0 var(--outline)) drop-shadow(0 -1px 0 var(--outline));
+}
+.d6 {
+  clip-path: inset(0 round 3px);
+}
+.d8 {
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+.d10 {
+  clip-path: polygon(50% 0, 100% 40%, 50% 100%, 0 40%);
+}
+.d12 {
+  clip-path: polygon(50% 0, 100% 38%, 82% 100%, 18% 100%, 0 38%);
+}
+.glow {
+  box-shadow: 0 0 0 3px var(--glow);
+}

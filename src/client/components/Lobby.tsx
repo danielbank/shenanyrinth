@@ -21,7 +21,19 @@ export function Lobby({ view }: { view: PlayerView }) {
           </li>
         ))}
       </ul>
+      {view.options.some((o) => o.type === 'startGame') ? (
+        <StartButton count={view.players.length} />
+      ) : null}
+      {view.phase !== 'lobby' ? <p>The game has started without you.</p> : null}
     </main>
+  );
+}
+
+function StartButton({ count }: { count: number }) {
+  return (
+    <button type="button" disabled={count < 2} onClick={() => send({ type: 'startGame' })}>
+      {count < 2 ? 'Waiting for another Player…' : `Start the game with ${count} Players`}
+    </button>
   );
 }
 
