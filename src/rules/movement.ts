@@ -2,7 +2,8 @@
 import { DIRS, neighbour, OPPOSITE } from './board.ts';
 import { emit, type Ctx } from './context.ts';
 import { TOWN } from './data.ts';
-import { sendHome } from './home.ts';
+import { arriveInTown, sendHome } from './home.ts';
+import { collect } from './pickups.ts';
 import { die } from './rng.ts';
 import { stat } from './stats.ts';
 import { reveal } from './torchlight.ts';
@@ -67,6 +68,8 @@ export function step(ctx: Ctx, p: Player, dir: Dir): void {
   else turn.dexLeft--;
   emit(ctx, { type: 'stepped', player: p.id, level: p.level, from, to: p.square, dir });
   reveal(g, p);
+  if (p.level === 'town') arriveInTown(ctx, p);
+  else collect(ctx, p);
   turn.onFeature = featureDestination(g, p) !== null;
   if (turn.free) {
     if (turn.stepsLeft === 0) endMove(ctx);
@@ -126,6 +129,7 @@ export function takeFeature(ctx: Ctx, p: Player): void {
   turn.choosingHeading = to.level !== 'town';
   emit(ctx, { type: 'travelled', player: p.id, from, to });
   reveal(g, p);
+  if (p.level !== 'town') collect(ctx, p);
 }
 
 export function headingOptions(g: GameState, p: Player): Action[] {

@@ -1,6 +1,6 @@
 /** Seats, Turns, Rounds and the end of the game. */
 import { emit, findPlayer, type Ctx } from './context.ts';
-import { DOOM_TRACK } from './data.ts';
+import { DOOM_TRACK, TOWN } from './data.ts';
 import { winners } from './score.ts';
 import type { GameState } from './types.ts';
 
@@ -24,7 +24,10 @@ export function startTurn(ctx: Ctx, seat: number): void {
     free: false,
     onFeature: false,
     choosingHeading: false,
+    passed: [],
   };
+  const building = p.level === 'town' ? TOWN.buildings[p.square] : undefined;
+  if (building) g.turn.passed.push(building);
   emit(ctx, { type: 'turnStarted', player: p.id, round: g.round });
 }
 

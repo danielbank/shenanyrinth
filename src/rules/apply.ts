@@ -9,6 +9,7 @@ import {
   TOWN,
 } from './data.ts';
 import { RuleError } from './errors.ts';
+import { deposit } from './errands.ts';
 import { legalActions } from './legal.ts';
 import { chooseHeading, endMove, roll, step, takeFeature } from './movement.ts';
 import { shuffle } from './rng.ts';
@@ -62,6 +63,8 @@ function handle(ctx: Ctx, actor: PlayerId, action: Action): void {
       return takeFeature(ctx, me(g));
     case 'chooseHeading':
       return chooseHeading(ctx, me(g), action.dir);
+    case 'deposit':
+      return deposit(ctx, me(g), action.amount);
     case 'endTurn':
       return endTurn(ctx);
   }

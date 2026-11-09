@@ -1,5 +1,6 @@
 /** Every enumerable action a Player may take right now. */
 import { currentPlayer } from './context.ts';
+import { errandOptions } from './errands.ts';
 import { headingOptions, stepOptions } from './movement.ts';
 import type { Action, GameState, PlayerId } from './types.ts';
 
@@ -26,6 +27,7 @@ export function legalActions(g: GameState, id: PlayerId): Action[] {
         break;
       }
       if (g.turn.onFeature) out.push({ type: 'takeFeature' });
+      out.push(...errandOptions(g, p));
       out.push({ type: 'endTurn' });
       break;
   }

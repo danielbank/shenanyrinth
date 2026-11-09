@@ -4,8 +4,8 @@
  */
 import { applyAction } from './apply.ts';
 import { newGame } from './setup.ts';
-import { COLOURS, HEROES } from './data.ts';
-import type { Action, GameEvent, GameState, PlayerId, Stats } from './types.ts';
+import { COLOURS, HEROES, TOWN } from './data.ts';
+import type { Action, GameEvent, GameState, PlayerId, Stats, Token } from './types.ts';
 
 export const NAMES = ['Ann', 'Bo', 'Cy', 'Di', 'Ed', 'Fay'];
 
@@ -126,12 +126,36 @@ export function placed(
   square: number,
   heading: 'N' | 'E' | 'S' | 'W' = 'N',
 ): GameState {
-  return withPlayer(g, id, (p) => {
+  const copy = withPlayer(g, id, (p) => {
     p.level = level;
     p.square = square;
     p.heading = heading;
   });
+  // A Player placed before their Turn begins has passed only the building they stand on.
+  if (copy.turn?.player === id && copy.turn.phase === 'prepare') {
+    const building = level === 'town' ? TOWN.buildings[square] : undefined;
+    copy.turn.passed = building ? [building] : [];
+  }
+  return copy;
 }
 
 /** A square index from (x, y). */
 export const sq = (size: number, x: number, y: number) => y * size + x;
+
+/** Put tokens on a Level, replacing whatever was there. */
+export function withTokens(
+  g: GameState,
+  level: 'forest' | 'dungeon',
+  tokens: Record<number, Token>,
+): GameState {
+  const copy = structuredClone(g);
+  copy.boards[level].tokens = { ...tokens };
+  return copy;
+}
+
+/** Light up a whole Level, as if Torchlight had been everywhere. */
+export function revealAll(g: GameState, level: 'forest' | 'dungeon'): GameState {
+  const copy = structuredClone(g);
+  copy.boards[level].revealed = copy.boards[level].revealed.map(() => true);
+  return copy;
+}

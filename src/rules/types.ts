@@ -39,6 +39,8 @@ export interface Player {
 /** A fixed thing on a square; it stays put when Tiles are swapped. */
 export type Feature = { type: 'gate'; side: Dir };
 
+export type Token = { type: 'gold'; amount: number } | { type: 'herbs' } | { type: 'artifacts' };
+
 export interface Board {
   size: number;
   /** Each square's Exits, in N E S W order, e.g. 'NS'. */
@@ -46,6 +48,9 @@ export interface Board {
   /** Squares revealed by Torchlight, permanently and for everyone. */
   revealed: boolean[];
   features: Record<number, Feature>;
+  tokens: Record<number, Token>;
+  /** What Lost and Knocked Out Players dropped. */
+  piles: Record<number, Pack>;
 }
 
 export type PathLevel = 'forest' | 'dungeon';
@@ -66,6 +71,8 @@ export interface Turn {
   onFeature: boolean;
   /** Just arrived on a path Level: the Player chooses a Heading. */
   choosingHeading: boolean;
+  /** Town buildings passed this Turn, for Errands. */
+  passed: Building[];
 }
 
 export interface GameState {
@@ -91,6 +98,7 @@ export type Action =
   | { type: 'stop' }
   | { type: 'takeFeature' }
   | { type: 'chooseHeading'; dir: Dir }
+  | { type: 'deposit'; amount: number }
   | { type: 'endTurn' };
 
 interface Base {
@@ -120,6 +128,17 @@ export type GameEvent = Base &
       }
     | { type: 'headingChosen'; player: PlayerId; dir: Dir }
     | { type: 'lost'; player: PlayerId; level: LevelName; square: number }
+    | { type: 'dropped'; player: PlayerId; level: LevelName; square: number; pile: Pack }
+    | {
+        type: 'pickedUp';
+        player: PlayerId;
+        level: PathLevel;
+        square: number;
+        token: Token | null;
+        pile: Pack | null;
+      }
+    | { type: 'deposited'; player: PlayerId; amount: number }
+    | { type: 'healed'; player: PlayerId; hp: number }
     | { type: 'turnEnded'; player: PlayerId }
     | { type: 'roundEnded'; round: number }
     | { type: 'gameOver'; winners: PlayerId[] }
@@ -175,6 +194,9 @@ export interface SquareView {
   exits: string | null;
   revealed: boolean;
   feature: Feature | null;
+  /** Contents show only once revealed. */
+  token: Token | null;
+  pile: Pack | null;
 }
 
 export interface BoardView {

@@ -60,6 +60,8 @@ function emptyBoard(g: GameState, cfg: LevelConfig): Board {
     tiles: generateTiles(g, cfg),
     revealed: Array.from({ length: cfg.size * cfg.size }, () => false),
     features: {},
+    tokens: {},
+    piles: {},
   };
 }
 

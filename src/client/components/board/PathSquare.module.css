@@ -20,6 +20,9 @@
   position: absolute;
   inset: 0;
 }
+.square > svg {
+  position: relative;
+}
 .hub,
 .arm {
   position: absolute;

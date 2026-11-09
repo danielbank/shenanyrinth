@@ -1,4 +1,5 @@
 import { generateDungeon, generateForest } from './generate.ts';
+import { seedTokens } from './pickups.ts';
 import type { GameState } from './types.ts';
 
 export function newGame({ seed }: { seed: number }): GameState {
@@ -15,5 +16,6 @@ export function newGame({ seed }: { seed: number }): GameState {
   };
   g.boards.forest = generateForest(g);
   g.boards.dungeon = generateDungeon(g);
+  seedTokens(g, 'forest');
   return g;
 }

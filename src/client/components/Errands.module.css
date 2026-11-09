@@ -1,0 +1,30 @@
+.errands {
+  position: absolute;
+  left: 50%;
+  bottom: calc(52px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 4;
+  width: min(360px, calc(100% - 16px));
+  background: var(--panel);
+  border: 3px solid var(--outline);
+  padding: 8px;
+  display: grid;
+  gap: 6px;
+  max-height: 45%;
+  overflow-y: auto;
+}
+.title {
+  margin: 0;
+  font-size: 14px;
+  color: var(--gold);
+}
+.row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.amount {
+  min-width: 2ch;
+  text-align: center;
+}

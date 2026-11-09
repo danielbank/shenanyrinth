@@ -66,6 +66,8 @@ function boardView(board: Board): BoardView {
       exits,
       revealed: board.revealed[i] ?? false,
       feature: board.features[i] ?? null,
+      token: (board.revealed[i] && board.tokens[i]) || null,
+      pile: (board.revealed[i] && board.piles[i]) || null,
     })),
   };
 }

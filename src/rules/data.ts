@@ -40,16 +40,33 @@ export interface LevelConfig {
   mix: Record<TileShape, number>;
   /** Chance that a non-corner edge square is an inward T-junction. */
   edgeT: number;
+  goldTokens: number;
+  goldMin: number;
+  goldMax: number;
+  material: 'herbs' | 'artifacts';
+  materialTokens: number;
 }
 
 export const FOREST: LevelConfig = {
   size: 9,
   mix: { straight: 50, bend: 20, t: 20, cross: 10 },
   edgeT: 0.5,
+  goldTokens: 6,
+  goldMin: 1,
+  goldMax: 2,
+  material: 'herbs',
+  materialTokens: 4,
 };
 
 export const DUNGEON: LevelConfig = {
   size: 7,
   mix: { straight: 5, bend: 75, t: 15, cross: 5 },
   edgeT: 0.5,
+  goldTokens: 5,
+  goldMin: 3,
+  goldMax: 5,
+  material: 'artifacts',
+  materialTokens: 5,
 };
+
+export const LEVELS = { forest: FOREST, dungeon: DUNGEON };
