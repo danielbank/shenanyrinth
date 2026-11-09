@@ -1,15 +1,15 @@
 .card {
+  composes: frame from global;
+  /* The gold edge marks the Response window apart from other panels. */
+  outline: 3px solid #f2c14e;
   position: absolute;
   inset: auto 0 0 0;
   margin: 0 auto calc(52px + env(safe-area-inset-bottom, 0px));
   z-index: 8;
   width: min(400px, calc(100% - 16px));
-  background: var(--panel);
-  border: 3px solid var(--gold);
   padding: 8px;
   display: grid;
   gap: 8px;
-  color: inherit;
 }
 .bar {
   height: 6px;
@@ -48,7 +48,7 @@
   font-size: 12px;
 }
 .total {
-  font-size: 18px;
+  font-size: 24px;
   font-weight: bold;
 }
 .actions {

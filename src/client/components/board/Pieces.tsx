@@ -32,7 +32,12 @@ export function Pieces({
         animate={{ x: (at % size) * tile + nudge, y: Math.floor(at / size) * tile }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
       >
-        <HeroSprite hero={p.hero} colour={p.colour} size={`${tile}px`} />
+        <HeroSprite
+          hero={p.hero}
+          colour={p.colour}
+          scale={tile / 16}
+          facingWest={p.heading === 'W'}
+        />
       </m.div>
     );
   });

@@ -6,12 +6,14 @@
   overflow-y: auto;
 }
 .title {
-  font-size: 28px;
+  font-size: 32px;
   letter-spacing: 2px;
   color: var(--gold);
   text-shadow: 2px 2px 0 var(--outline);
 }
 .form {
+  composes: frame from global;
+  padding: 8px;
   display: grid;
   gap: 10px;
   margin-bottom: 20px;
@@ -36,11 +38,10 @@
   gap: 6px;
 }
 .player {
+  composes: frame from global;
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--panel);
-  border: 2px solid var(--outline);
   padding: 6px;
 }
 .error {

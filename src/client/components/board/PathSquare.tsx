@@ -1,20 +1,21 @@
 import { memo } from 'react';
 import * as m from 'motion/react-m';
-import type { Dir, PathLevel, SquareView } from '../../../rules/index.ts';
-import { ARTIFACT, CHEST, COIN, HERB, PILE } from '../../art/itemSprites.ts';
-import { MOB_SPRITES } from '../../art/mobSprites.ts';
-import { GATE_SPRITE, STAIRS_DOWN_SPRITE, STAIRS_UP_SPRITE } from '../../art/townSprites.ts';
+import type { PathLevel, SquareView } from '../../../rules/index.ts';
+import { PATH_DRAWINGS, pathShape } from '../../art/inHouse.ts';
+import {
+  GATE_SPRITE,
+  GROUND,
+  MOB_SPRITES,
+  STAIRS_DOWN_SPRITE,
+  STAIRS_UP_SPRITE,
+  TOKEN_SPRITES,
+  variant,
+} from '../../art/sheets.ts';
 import { PixelArt } from '../PixelArt.tsx';
+import { Sprite } from '../Sprite.tsx';
 import styles from './PathSquare.module.css';
 
-const ARM: Record<Dir, string | undefined> = {
-  N: styles.armN,
-  E: styles.armE,
-  S: styles.armS,
-  W: styles.armW,
-};
-
-/** One Forest or Dungeon square: its path overlay, fog and Feature. */
+/** One Forest or Dungeon square: its ground, path overlay, fog and Feature. */
 export const PathSquare = memo(function PathSquare({
   level,
   square,
@@ -30,70 +31,84 @@ export const PathSquare = memo(function PathSquare({
   style: { left: number; top: number; width: number; height: number };
   onInspect: (square: number) => void;
 }) {
-  const cls = [styles.square, styles[level]];
+  const scale = tile / 16;
+  const ground =
+    level === 'forest' ? variant(GROUND.grass, index) : variant(GROUND.dungeonFloor, index);
+  const fog = level === 'forest' ? GROUND.forestFog : variant(GROUND.dungeonRock, index);
+  const path = square.exits ? pathShape(square.exits) : null;
   return (
     <button
       type="button"
-      className={cls.join(' ')}
+      className={styles.square}
       style={style}
       aria-label={`Inspect square ${index}`}
       onClick={() => onInspect(index)}
     >
-      {square.exits ? (
-        <span className={styles.path}>
-          <span className={styles.hub} />
-          {[...square.exits].map((d) => (
-            <span key={d} className={`${styles.arm} ${ARM[d as Dir] ?? ''}`} />
-          ))}
+      <Sprite sprite={ground} scale={scale} className={styles.layer} />
+      {path ? (
+        <span className={styles.layer} style={{ transform: `rotate(${path.quarters * 90}deg)` }}>
+          <PixelArt drawing={PATH_DRAWINGS[level][path.shape]!} size={`${tile}px`} />
         </span>
       ) : null}
-      <Contents square={square} tile={tile} />
+      <Contents square={square} scale={scale} />
       <m.span
         className={styles.fogLayer}
         initial={false}
         animate={{ opacity: square.revealed ? 0 : 1 }}
         transition={{ duration: 0.4 }}
-      />
+      >
+        <Sprite
+          sprite={fog}
+          scale={scale}
+          className={level === 'forest' ? `${styles.layer} ${styles.leafy}` : styles.layer}
+        />
+      </m.span>
       {square.feature?.type === 'gate' ? (
-        <PixelArt sprite={GATE_SPRITE} size={`${tile}px`} label="Gate to the Town" />
+        <Sprite
+          sprite={GATE_SPRITE}
+          scale={scale}
+          className={styles.feature}
+          label="Gate to the Town"
+        />
       ) : null}
       {square.feature?.type === 'stairs' ? (
-        <PixelArt
+        <Sprite
           sprite={STAIRS_DOWN_SPRITE}
-          size={`${tile}px`}
+          scale={scale}
+          className={styles.feature}
           label="Stairs down to the Dungeon"
         />
       ) : null}
       {square.feature?.type === 'stairsUp' ? (
-        <PixelArt sprite={STAIRS_UP_SPRITE} size={`${tile}px`} label="Stairs up to the Forest" />
+        <Sprite
+          sprite={STAIRS_UP_SPRITE}
+          scale={scale}
+          className={styles.feature}
+          label="Stairs up to the Forest"
+        />
       ) : null}
     </button>
   );
 });
 
-function Contents({ square, tile }: { square: SquareView; tile: number }) {
-  const size = `${Math.round(tile * 0.75)}px`;
+function Contents({ square, scale }: { square: SquareView; scale: number }) {
   const token = square.token;
+  const at = (label: string, sprite: typeof TOKEN_SPRITES.gold) => (
+    <Sprite sprite={sprite} scale={scale} className={styles.layer} label={label} />
+  );
   return (
     <>
-      {token?.type === 'gold' ? (
-        <PixelArt sprite={COIN} size={size} label={`${token.amount} Gold`} />
-      ) : null}
-      {token?.type === 'herbs' ? <PixelArt sprite={HERB} size={size} label="Herbs" /> : null}
-      {token?.type === 'artifacts' ? (
-        <PixelArt sprite={ARTIFACT} size={size} label="Artifact" />
-      ) : null}
-      {token?.type === 'cache' ? (
-        <PixelArt sprite={CHEST} size={size} label={`A Cache, rated ${token.rating}`} />
-      ) : null}
-      {square.pile ? <PixelArt sprite={PILE} size={size} label="A dropped pile" /> : null}
-      {square.mob ? (
-        <PixelArt
-          sprite={MOB_SPRITES[square.mob.kind] ?? MOB_SPRITES.Goblin!}
-          size={`${tile}px`}
-          label={`${square.mob.kind}, ${square.mob.wounds}/${square.mob.maxWounds} Wounds`}
-        />
-      ) : null}
+      {token?.type === 'gold' ? at(`${token.amount} Gold`, TOKEN_SPRITES.gold) : null}
+      {token?.type === 'herbs' ? at('Herbs', TOKEN_SPRITES.herbs) : null}
+      {token?.type === 'artifacts' ? at('Artifact', TOKEN_SPRITES.artifacts) : null}
+      {token?.type === 'cache' ? at(`A Cache, rated ${token.rating}`, TOKEN_SPRITES.cache) : null}
+      {square.pile ? at('A dropped pile', TOKEN_SPRITES.pile) : null}
+      {square.mob
+        ? at(
+            `${square.mob.kind}, ${square.mob.wounds}/${square.mob.maxWounds} Wounds`,
+            MOB_SPRITES[square.mob.kind]!,
+          )
+        : null}
     </>
   );
 }

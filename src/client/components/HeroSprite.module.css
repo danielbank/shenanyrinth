@@ -1,0 +1,18 @@
+.hero {
+  position: relative;
+  display: inline-grid;
+  flex: none;
+  vertical-align: middle;
+}
+.hero > * {
+  grid-area: 1 / 1;
+}
+.ring {
+  align-self: end;
+  justify-self: center;
+  width: 76%;
+  height: 25%;
+  border-radius: 50%;
+  background: var(--ring);
+  box-shadow: 0 0 0 var(--px) var(--outline);
+}

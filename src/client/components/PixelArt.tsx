@@ -1,21 +1,21 @@
 import { memo } from 'react';
-import type { Sprite } from '../art/sprites.ts';
+import type { Drawing } from '../art/inHouse.ts';
 
-/** Draws a text-glyph sprite as crisp SVG rectangles, scaled by whole numbers in CSS. */
+/** Draws an in-house text-glyph drawing as crisp SVG rectangles, at a whole-number scale. */
 export const PixelArt = memo(function PixelArt({
-  sprite,
+  drawing,
   fill = {},
   size = 'var(--tile)',
   label,
 }: {
-  sprite: Sprite;
+  drawing: Drawing;
   fill?: Record<string, string>;
   size?: string;
   label?: string;
 }) {
-  const palette = { ...sprite.palette, ...fill };
-  const width = sprite.rows[0]?.length ?? 0;
-  const rects = sprite.rows.flatMap((row, y) =>
+  const palette = { ...drawing.palette, ...fill };
+  const width = drawing.rows[0]?.length ?? 0;
+  const rects = drawing.rows.flatMap((row, y) =>
     [...row].flatMap((ch, x) => {
       const colour = palette[ch];
       return colour
@@ -25,7 +25,7 @@ export const PixelArt = memo(function PixelArt({
   );
   return (
     <svg
-      viewBox={`0 0 ${width} ${sprite.rows.length}`}
+      viewBox={`0 0 ${width} ${drawing.rows.length}`}
       width={size}
       height={size}
       shapeRendering="crispEdges"

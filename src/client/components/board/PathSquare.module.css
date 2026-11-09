@@ -1,78 +1,32 @@
 .square {
   position: absolute;
   display: grid;
-  place-items: center;
   overflow: hidden;
   padding: 0;
   border: 0;
   cursor: help;
+  background: var(--rock);
 }
-.forest {
-  --path: var(--dirt);
-  background-color: var(--grass);
-  background-image: radial-gradient(circle at 25% 75%, #4c7a30 1px, transparent 1.5px);
-  background-size: calc(var(--tile) / 2) calc(var(--tile) / 2);
+.square > * {
+  grid-area: 1 / 1;
 }
-.dungeon {
-  --path: var(--stone);
-  background-color: var(--rock);
-  background-image: radial-gradient(circle at 70% 30%, #2b262f 1px, transparent 1.5px);
-  background-size: calc(var(--tile) / 2) calc(var(--tile) / 2);
-}
-.path {
-  position: absolute;
-  inset: 0;
-}
-.square > svg {
+.layer {
+  display: block;
+  line-height: 0;
+  /* Positioned so every layer paints in DOM order, the rotated path overlay included. */
   position: relative;
 }
-.hub,
-.arm {
-  position: absolute;
-  background: var(--path);
-}
-.hub {
-  left: 31.25%;
-  top: 31.25%;
-  width: 37.5%;
-  height: 37.5%;
-}
-.armN,
-.armS {
-  left: 31.25%;
-  width: 37.5%;
-  height: 40%;
-}
-.armN {
-  top: 0;
-}
-.armS {
-  bottom: 0;
-}
-.armE,
-.armW {
-  top: 31.25%;
-  height: 37.5%;
-  width: 40%;
-}
-.armE {
-  right: 0;
-}
-.armW {
-  left: 0;
+.feature {
+  position: relative;
+  z-index: 2;
 }
 .fogLayer {
-  position: absolute;
-  inset: 0;
+  display: grid;
   pointer-events: none;
+  position: relative;
   z-index: 1;
 }
-.forest .fogLayer {
-  background:
-    radial-gradient(circle at 20% 20%, rgb(35 64 27 / 0.55) 18%, transparent 20%),
-    radial-gradient(circle at 80% 75%, rgb(35 64 27 / 0.55) 16%, transparent 18%),
-    rgb(20 40 16 / 0.35);
-}
-.dungeon .fogLayer {
-  background: #15121a;
+.leafy {
+  /* The Forest's paths stay visible under its fog; only the contents are hidden. */
+  opacity: 0.55;
 }

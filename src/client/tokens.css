@@ -1,7 +1,15 @@
 /* Design tokens: the Tiny palette and the whole-number pixel scale. */
+@font-face {
+  font-family: 'KenPixel';
+  src: url('/art/kenpixel.ttf') format('truetype');
+  font-display: swap;
+}
 :root {
   --outline: #3f2631;
   --ink: #f4e9d8;
+  /* A die's face and number, which stay the same inside framed panels. */
+  --die-face: #f4e9d8;
+  --die-ink: #3f2631;
   --ink-dim: #b9a78f;
   --panel: #472d3c;
   --panel-2: #5e3a4b;
@@ -18,7 +26,7 @@
   --danger: #e0533d;
   --scale: 2;
   --tile: calc(16px * var(--scale));
-  --font: 'Courier New', ui-monospace, monospace;
+  --font: 'KenPixel', 'Courier New', ui-monospace, monospace;
   --red: #d9534f;
   --blue: #4f8fd9;
   --green: #5cb85c;
@@ -64,4 +72,22 @@ select {
   color: var(--ink);
   border: 2px solid var(--outline);
   padding: 4px;
+}
+
+/*
+ * A panel in the Pixel Adventure frame: a cream card with a wooden rim, sliced 4px from each
+ * edge and scaled by whole numbers. Text inside turns dark, and highlights darken to suit.
+ */
+.frame {
+  --ink: var(--outline);
+  --ink-dim: #7a5a48;
+  --gold: #a8641c;
+  --panel-2: #f0dcb4;
+  --artifact: #2f7fa0;
+  --free: #2f8a2f;
+  color: var(--ink);
+  border: calc(4px * var(--scale)) solid transparent;
+  border-image: url('/art/frame.png') 4 fill / calc(4px * var(--scale)) stretch;
+  background: none;
+  image-rendering: pixelated;
 }

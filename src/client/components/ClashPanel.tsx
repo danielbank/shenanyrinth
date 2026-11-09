@@ -1,9 +1,9 @@
 import { APPROACH_STAT } from '../../rules/data.ts';
 import type { Approach, Clash, PlayerView } from '../../rules/index.ts';
-import { MOB_SPRITES } from '../art/mobSprites.ts';
+import { MOB_SPRITES } from '../art/sheets.ts';
 import { send } from '../socket.ts';
 import { Die } from './Die.tsx';
-import { PixelArt } from './PixelArt.tsx';
+import { Sprite } from './Sprite.tsx';
 import styles from './ClashPanel.module.css';
 
 /** The Clash: both dice face-up, then Press (with any Approach) or Retreat. */
@@ -18,7 +18,7 @@ export function ClashPanel({ view }: { view: PlayerView }) {
   return (
     <section className={styles.panel} aria-label="Clash">
       <div className={styles.head}>
-        <PixelArt sprite={MOB_SPRITES[mob.kind] ?? MOB_SPRITES.Goblin!} size="32px" />
+        <Sprite sprite={MOB_SPRITES[mob.kind]!} scale={2} />
         <strong>
           {fighter.name} vs {mob.kind}
         </strong>

@@ -7,7 +7,6 @@ import type {
   SquareView,
   Trinket,
 } from '../rules/index.ts';
-import { BUILDING_NAMES } from './art/townSprites.ts';
 
 export const ITEM_BLURBS: Record<ItemKind, string> = {
   boots: 'Boots of Second Thoughts: +1 Pivot Limit.',
@@ -35,6 +34,14 @@ export const TRINKET_BLURBS: Record<Trinket, string> = {
   'Rubber Chicken': 'Squeaks on demand, and when you are slapped. 1 point.',
   'Lute of the Bard': 'A jingle when you Deposit. 1 point.',
   'Party Popper': 'Confetti for everyone when you Deposit 10 or more Gold at once. 1 point.',
+};
+
+export const BUILDING_NAMES: Record<Building, string> = {
+  keepHall: 'Keep Hall',
+  blacksmith: 'Blacksmith',
+  apothecary: 'Apothecary',
+  arcanist: 'Arcanist',
+  guild: "Adventurer's Guild",
 };
 
 export const BUILDING_BLURBS: Record<Building, string> = {

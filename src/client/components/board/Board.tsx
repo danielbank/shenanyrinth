@@ -1,8 +1,9 @@
 import type { LevelName, PlayerView } from '../../../rules/index.ts';
 import type { PieceAt } from '../../eventQueue.ts';
 import { useScale } from '../../useScale.ts';
-import { BUILDING_NAMES, BUILDING_SPRITES, GATE_SPRITE } from '../../art/townSprites.ts';
-import { PixelArt } from '../PixelArt.tsx';
+import { BUILDING_SPRITES, GATE_SPRITE, GROUND, variant } from '../../art/sheets.ts';
+import { BUILDING_NAMES } from '../../blurbs.ts';
+import { Sprite } from '../Sprite.tsx';
 import { Controls } from './Controls.tsx';
 import { place } from './geometry.ts';
 import { PathSquare } from './PathSquare.tsx';
@@ -33,10 +34,7 @@ export function Board({
   const me = view.you ? shown[view.you] : undefined;
   const picked = new Set(picks ?? []);
   return (
-    <div
-      className={`${styles.board} ${level === 'town' ? styles.town : ''}`}
-      style={{ width: size * tile, height: size * tile }}
-    >
+    <div className={styles.board} style={{ width: size * tile, height: size * tile }}>
       {squareIds(size).map((i) =>
         level === 'town' ? (
           <TownSquare key={i} view={view} square={i} tile={tile} onInspect={onInspect} />
@@ -115,11 +113,18 @@ function TownSquare({
       aria-label={label}
       onClick={() => onInspect(square)}
     >
-      <span className={styles.cobble} />
+      <Sprite sprite={variant(GROUND.grass, square)} scale={tile / 16} className={styles.layer} />
       {building ? (
-        <PixelArt sprite={BUILDING_SPRITES[building]} size={`${tile}px`} label={label} />
+        <Sprite
+          sprite={BUILDING_SPRITES[building]}
+          scale={tile / 16}
+          className={styles.layer}
+          label={label}
+        />
       ) : null}
-      {gate ? <PixelArt sprite={GATE_SPRITE} size={`${tile}px`} label={label} /> : null}
+      {gate ? (
+        <Sprite sprite={GATE_SPRITE} scale={tile / 16} className={styles.layer} label={label} />
+      ) : null}
     </button>
   );
 }

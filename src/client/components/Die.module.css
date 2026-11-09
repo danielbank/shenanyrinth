@@ -4,9 +4,9 @@
   width: 26px;
   height: 26px;
   font-weight: bold;
-  font-size: 13px;
-  color: var(--outline);
-  background: var(--ink);
+  font-size: 12px;
+  color: var(--die-ink);
+  background: var(--die-face);
   filter: drop-shadow(1px 0 0 var(--outline)) drop-shadow(-1px 0 0 var(--outline))
     drop-shadow(0 1px 0 var(--outline)) drop-shadow(0 -1px 0 var(--outline));
 }

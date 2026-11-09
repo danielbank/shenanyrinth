@@ -31,7 +31,7 @@
   right: -4px;
   background: var(--gold);
   color: var(--outline);
-  font-size: 9px;
+  font-size: 8px;
   font-weight: bold;
   padding: 0 3px;
 }
@@ -42,7 +42,7 @@
 .crumbs {
   display: flex;
   gap: 4px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--ink-dim);
   flex-wrap: wrap;
 }
@@ -78,7 +78,7 @@
   padding: 4px 8px;
   background: var(--panel);
   border: 2px solid var(--outline);
-  font-size: 13px;
+  font-size: 12px;
 }
 .hp {
   color: var(--danger);
@@ -92,7 +92,7 @@
   z-index: 3;
 }
 .tabs button {
-  font-size: 11px;
+  font-size: 12px;
   padding: 2px 6px;
 }
 .tabOn {

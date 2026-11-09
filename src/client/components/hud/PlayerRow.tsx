@@ -23,7 +23,7 @@ export function PlayerRow({
               aria-label={`${p.name}: ${p.publicScore} points`}
               onClick={() => onInspect(p.id)}
             >
-              <HeroSprite hero={p.hero} colour={p.colour} size="24px" />
+              <HeroSprite hero={p.hero} colour={p.colour} scale={2} />
               <span>{p.name}</span>
               <span className={styles.score}>{p.publicScore}</span>
               {current ? <span className={styles.tag}>TURN</span> : null}

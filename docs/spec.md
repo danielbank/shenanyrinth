@@ -470,13 +470,12 @@ The board fills a fixed-height app shell at a whole-number scale (×2 on phones,
 
 All assets are CC0.
 
-**Art:** everything is 16×16 pixel art from the Kenney "Tiny" family:
-- Tiny Town for the Town and Forest
-- Tiny Dungeon for the Dungeon and heroes
-- Tiny Creatures for Mobs
-- Tiny items
-- UI Pack – Pixel Adventure for frames
-- Kenney Fonts
+**Art:** everything is 16×16 pixel art from Kenney's Tiny Town and Tiny Dungeon, plus Clint Bellanger's Tiny Creatures add-on (made with Kenney's permission). The packs come from OpenGameArt, because kenney.nl refuses automated downloads; `src/client/public/art/SOURCES.md` lists each file.
+- Tiny Town for the Town, the Forest, Gold, Herbs and dropped piles
+- Tiny Dungeon for the Dungeon, the heroes and Caches
+- Tiny Creatures for Mobs and Artifacts
+- UI Pack – Pixel Adventure for panel frames
+- Kenney Fonts (KenPixel) for all text
 
 **Icons:** from Kenney's 1-Bit Pack, in two treatments:
 - **Dark-tile badges** for HUD buttons over the board.

@@ -4,9 +4,10 @@ import { SLAP_COOLDOWN_MS } from '../../rules/data.ts';
 import type { PlayerView } from '../../rules/index.ts';
 import { fxStore, type Fx } from '../fxStore.ts';
 import { send } from '../socket.ts';
+import { Glyph } from './Icon.tsx';
 import styles from './Slap.module.css';
 
-/** ✋ always hits whoever's Turn it is; the ring shows the cooldown. */
+/** The slap always hits whoever's Turn it is; the ring shows the cooldown. */
 export function SlapButton({ view }: { view: PlayerView }) {
   const [cooling, setCooling] = useState(0);
   const me = view.players.find((p) => p.id === view.you);
@@ -25,7 +26,7 @@ export function SlapButton({ view }: { view: PlayerView }) {
       title={`Slap ${target.name}`}
       onClick={slap}
     >
-      ✋
+      <Glyph name="hand" scale={2} />
       {cooling > 0 ? (
         <svg key={cooling} className={styles.ring} viewBox="0 0 52 52" aria-hidden>
           <m.circle

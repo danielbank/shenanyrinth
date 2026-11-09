@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import * as m from 'motion/react-m';
 import type { DieInPlay, ItemKind, PlayerView, ResponseWindow } from '../../rules/index.ts';
-import { COLOUR_HEX } from '../art/sprites.ts';
+import { COLOUR_HEX } from '../art/colours.ts';
 import { itemName } from '../itemNames.ts';
 import { send } from '../socket.ts';
 import { Die } from './Die.tsx';
