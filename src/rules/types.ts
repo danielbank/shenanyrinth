@@ -59,6 +59,8 @@ export interface Player {
   dungeonStreak: number;
   /** Server time of this Player's last slap, for the cooldown. */
   lastSlapAt: number | null;
+  /** Server time of this Player's last Rubber Chicken squeak. */
+  lastSqueakAt: number | null;
   /** Shakedowns won, for the Shakedown Artist Deed. */
   shakedownWins: number;
   /** Just Shaken down: safe from Shakedowns until their next Turn. */
@@ -289,6 +291,7 @@ export type Action =
   | { type: 'skipTurn' }
   /** `at` is the server's clock, filled in by the server. */
   | { type: 'slap'; at: number }
+  | { type: 'squeak'; at: number }
   | { type: 'exchange'; approach: Approach }
   | { type: 'retreat' }
   | { type: 'resumeClash' }
@@ -313,6 +316,8 @@ export type GameEvent = Base &
         from: number;
         to: number;
         dir: Dir;
+        /** The step left off the Heading. */
+        pivot?: boolean;
       }
     | {
         type: 'travelled';
@@ -369,6 +374,7 @@ export type GameEvent = Base &
     | { type: 'presence'; player: PlayerId; online: boolean }
     | { type: 'turnSkipped'; player: PlayerId; by: PlayerId }
     | { type: 'slapped'; by: PlayerId; target: PlayerId; bounced: boolean }
+    | { type: 'squeaked'; player: PlayerId }
     | { type: 'shakedownResolved'; winner: PlayerId | null; loser: PlayerId | null; taken: Pack }
     | { type: 'healed'; player: PlayerId; hp: number }
     | { type: 'ambushed'; player: PlayerId; level: PathLevel; square: number; mob: string }

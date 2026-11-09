@@ -1,6 +1,6 @@
 /** Table housekeeping: the Host role, who is online, skipping Turns, and the slap. */
 import { emit, findPlayer, type Ctx } from './context.ts';
-import { SLAP_COOLDOWN_MS } from './data.ts';
+import { SLAP_COOLDOWN_MS, SQUEAK_COOLDOWN_MS } from './data.ts';
 import { RuleError } from './errors.ts';
 import { die } from './rng.ts';
 import { endTurn } from './turns.ts';
@@ -60,4 +60,15 @@ export function slap(ctx: Ctx, actor: PlayerId, at: number): void {
   p.lastSlapAt = at;
   const bounced = target.trinkets.includes('Ring of Reflection') && die(g, 2) === 2;
   emit(ctx, { type: 'slapped', by: p.id, target: bounced ? p.id : target.id, bounced });
+}
+
+/** The Rubber Chicken squeaks on demand, for everyone, with a cooldown. */
+export function squeak(ctx: Ctx, actor: PlayerId, at: number): void {
+  const p = findPlayer(ctx.g, actor);
+  if (!p?.trinkets.includes('Rubber Chicken')) throw new RuleError('You have no Rubber Chicken');
+  if (p.lastSqueakAt !== null && at - p.lastSqueakAt < SQUEAK_COOLDOWN_MS) {
+    throw new RuleError('Your Rubber Chicken is on cooldown');
+  }
+  p.lastSqueakAt = at;
+  emit(ctx, { type: 'squeaked', player: p.id });
 }

@@ -106,3 +106,20 @@ describe('The slap', () => {
     expect(() => applyAction(aLobby(2), 'p2', { type: 'slap', at: 0 })).toThrow();
   });
 });
+
+describe('The Rubber Chicken', () => {
+  it('its owner can squeak on demand, for everyone to hear, with a cooldown', () => {
+    const g = withPlayer(aGame(), 'p2', (p) => (p.trinkets = ['Rubber Chicken']));
+    const res = applyAction(g, 'p2', { type: 'squeak', at: 1000 });
+    expect(viewFor(res.state, 'p1', res.events).events).toContainEqual({
+      type: 'squeaked',
+      player: 'p2',
+    });
+    expect(() => applyAction(res.state, 'p2', { type: 'squeak', at: 3999 })).toThrow(/cooldown/);
+    expect(() => applyAction(res.state, 'p2', { type: 'squeak', at: 4000 })).not.toThrow();
+  });
+
+  it('only the Rubber Chicken’s owner can squeak', () => {
+    expect(() => applyAction(aGame(), 'p2', { type: 'squeak', at: 0 })).toThrow();
+  });
+});

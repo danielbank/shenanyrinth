@@ -1,6 +1,7 @@
 import { GEAR_NAMES, STATS } from '../../rules/data.ts';
 import type { PlayerView } from '../../rules/index.ts';
 import { itemName } from '../itemNames.ts';
+import { SoundSettings } from './SoundSettings.tsx';
 import { send } from '../socket.ts';
 import { Glyph } from './Icon.tsx';
 import type { Inspect } from './InspectCard.tsx';
@@ -70,6 +71,12 @@ export function Sheet({
             ))
           : 'none yet'}
       </div>
+      {me.trinkets.includes('Rubber Chicken') ? (
+        <button type="button" onClick={() => send({ type: 'squeak', at: 0 })}>
+          Squeak the Rubber Chicken
+        </button>
+      ) : null}
+      <SoundSettings />
       <label>
         <input
           type="checkbox"

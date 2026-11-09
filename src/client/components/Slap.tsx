@@ -57,7 +57,34 @@ export function SlapEffects({ view }: { view: PlayerView }) {
   );
 }
 
+const CONFETTI = Array.from({ length: 24 }, (_, i) => ({
+  id: i,
+  x: Math.cos((i / 24) * Math.PI * 2) * (120 + (i % 3) * 40),
+  y: Math.sin((i / 24) * Math.PI * 2) * (90 + (i % 4) * 30),
+  colour: ['#f2c14e', '#e0533d', '#7ec8e3', '#6fbf5a', '#e89ad8'][i % 5],
+}));
+
+/** Party Popper: confetti for everyone. */
+function Confetti({ fx }: { fx: Fx }) {
+  return (
+    <div className={styles.confetti} aria-hidden>
+      {CONFETTI.map((c) => (
+        <m.span
+          key={c.id}
+          className={styles.bit}
+          style={{ background: c.colour }}
+          initial={{ x: 0, y: 0, opacity: 1, rotate: 0 }}
+          animate={{ x: c.x, y: c.y + 120, opacity: 0, rotate: 360 }}
+          transition={{ duration: 1.4, ease: 'easeOut' }}
+          onAnimationComplete={c.id === 0 ? () => fxStore.done(fx.id) : undefined}
+        />
+      ))}
+    </div>
+  );
+}
+
 function Burst({ fx, view }: { fx: Fx; view: PlayerView }) {
+  if (fx.event.type === 'deposited') return <Confetti fx={fx} />;
   if (fx.event.type !== 'slapped') return null;
   const { target, by, bounced } = fx.event;
   const name = (id: string) => view.players.find((p) => p.id === id)?.name ?? '?';

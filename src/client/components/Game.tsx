@@ -20,6 +20,7 @@ import { AimBanner, ItemBar, type Aim } from './ItemBar.tsx';
 import { ResponseCard } from './ResponseCard.tsx';
 import { ShakedownPanel } from './ShakedownPanel.tsx';
 import { Sheet } from './Sheet.tsx';
+import { MuteBadge } from './SoundSettings.tsx';
 import { SlapButton, SlapEffects } from './Slap.tsx';
 import styles from './Game.module.css';
 
@@ -133,6 +134,7 @@ function BottomRight({
       >
         <Badge name="clash" />
       </button>
+      <MuteBadge className={styles.badgeButton} />
       <SlapButton view={view} />
     </div>
   );

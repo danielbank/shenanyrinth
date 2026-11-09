@@ -26,3 +26,16 @@
   translate: -50% -50%;
   white-space: nowrap;
 }
+
+.confetti {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  z-index: 20;
+  pointer-events: none;
+}
+.bit {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+}

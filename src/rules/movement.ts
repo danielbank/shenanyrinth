@@ -71,13 +71,22 @@ export function step(ctx: Ctx, p: Player, dir: Dir): void {
   const { g } = ctx;
   const turn = g.turn!;
   const from = p.square;
-  if (!turn.free && dir !== p.heading) p.pivots--;
+  const pivot = !turn.free && dir !== p.heading;
+  if (pivot) p.pivots--;
   p.heading = dir;
   p.square = neighbour(levelSize(g, p.level), from, dir);
   if (turn.stepsLeft > 0) turn.stepsLeft--;
   else turn.dexLeft--;
   turn.stepped++;
-  emit(ctx, { type: 'stepped', player: p.id, level: p.level, from, to: p.square, dir });
+  emit(ctx, {
+    type: 'stepped',
+    player: p.id,
+    level: p.level,
+    from,
+    to: p.square,
+    dir,
+    ...(pivot ? { pivot } : {}),
+  });
   reveal(g, p);
   if (p.level === 'town') arriveInTown(ctx, p);
   else collect(ctx, p);

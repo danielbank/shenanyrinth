@@ -50,7 +50,10 @@ export class Table {
 
   /** Server-side facts the client can't be trusted with, such as the time of a slap. */
   stamp(action: Action): Action {
-    return action.type === 'slap' ? { type: 'slap', at: this.clock.now() } : action;
+    if (action.type === 'slap' || action.type === 'squeak') {
+      return { type: action.type, at: this.clock.now() };
+    }
+    return action;
   }
 
   snapshot(): TableSnapshot {

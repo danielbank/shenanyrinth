@@ -23,6 +23,8 @@ export interface Queue {
   shown: Record<string, PieceAt>;
   /** True once every event has played and the board shows the latest view. */
   settled: boolean;
+  /** Events reached by the latest change, to sound once each; skipped events never sound. */
+  sounding: GameEvent[];
 }
 
 /** Events that have an animation; everything else applies at once. */
@@ -34,12 +36,22 @@ const ANIMATED = new Set<GameEvent['type']>([
 ]);
 
 export function createQueue({ reducedMotion = false } = {}): Queue {
-  return { reducedMotion, playing: null, pending: [], view: null, shown: {}, settled: true };
+  return {
+    reducedMotion,
+    playing: null,
+    pending: [],
+    view: null,
+    shown: {},
+    settled: true,
+    sounding: [],
+  };
 }
 
 export function receive(q: Queue, view: PlayerView): Queue {
   const next: Queue = { ...q, view, pending: [...q.pending, ...view.events] };
-  if (q.reducedMotion || !q.view) return skip(next);
+  if (!q.view) return skip(next);
+  // Reduced motion jumps to the end, but the new events still sound once.
+  if (q.reducedMotion) return { ...skip(next), sounding: view.events };
   // Every client jumps straight to the dice, so all Players get the full window.
   if (view.events.some((e) => e.type === 'responseOpened')) {
     return fastForward(next, (e) => e.type === 'responseOpened');
@@ -53,9 +65,9 @@ export function advance(q: Queue): Queue {
   return playNext({ ...q, shown: applyEvent(q.shown, q.playing) });
 }
 
-/** Jump to the latest view. */
+/** Jump to the latest view, silently. */
 export function skip(q: Queue): Queue {
-  return settle({ ...q, playing: null, pending: [] });
+  return settle({ ...q, playing: null, pending: [], sounding: [] });
 }
 
 /** Drop everything before the first event that matches, and play from there. */
@@ -64,7 +76,15 @@ export function fastForward(q: Queue, match: (e: GameEvent) => boolean): Queue {
   const k = all.findIndex(match);
   if (k < 0) return skip(q);
   const shown = all.slice(0, k).reduce(applyEvent, q.shown);
-  return { ...q, shown, playing: all[k] ?? null, pending: all.slice(k + 1), settled: false };
+  const playing = all[k]!;
+  return {
+    ...q,
+    shown,
+    playing,
+    pending: all.slice(k + 1),
+    settled: false,
+    sounding: [playing],
+  };
 }
 
 export function piecesShown(q: Queue): Record<string, PieceAt> {
@@ -77,11 +97,12 @@ function playNext(q: Queue): Queue {
   for (let k = 0; k < q.pending.length; k++) {
     const e = q.pending[k]!;
     if (ANIMATED.has(e.type)) {
-      return { ...q, shown, playing: e, pending: q.pending.slice(k + 1), settled: false };
+      const sounding = q.pending.slice(0, k + 1);
+      return { ...q, shown, playing: e, pending: q.pending.slice(k + 1), settled: false, sounding };
     }
     shown = applyEvent(shown, e);
   }
-  return settle({ ...q, shown, playing: null, pending: [] });
+  return settle({ ...q, shown, playing: null, pending: [], sounding: q.pending });
 }
 
 function settle(q: Queue): Queue {

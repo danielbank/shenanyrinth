@@ -124,6 +124,44 @@ describe('The client event queue', () => {
     expect(piecesShown(q).p1?.square).toBe(2);
   });
 
+  it('each event sounds once, as it is reached', () => {
+    let q = receive(createQueue(), aView(12, []));
+    const pick: GameEvent = {
+      type: 'pickedUp',
+      player: 'p1',
+      level: 'forest',
+      square: 7,
+      token: { type: 'herbs' },
+      pile: null,
+    };
+    q = receive(q, aView(2, [stepped(12, 7), pick, stepped(7, 2)]));
+    expect(q.sounding).toEqual([stepped(12, 7)]);
+    q = advance(q);
+    expect(q.sounding).toEqual([pick, stepped(7, 2)]);
+    q = advance(q);
+    expect(q.sounding).toEqual([]);
+  });
+
+  it('skipping ahead never replays a backlog of sounds', () => {
+    let q = receive(createQueue(), aView(12, []));
+    q = receive(q, aView(2, [stepped(12, 7), stepped(7, 2), stepped(2, 1)]));
+    q = skip(q);
+    expect(q.sounding).toEqual([]);
+  });
+
+  it('fast-forwarding sounds only the event it jumps to', () => {
+    let q = receive(createQueue(), aView(12, []));
+    const opened: GameEvent = { type: 'responseOpened', id: 1, dice: [], eligible: [] };
+    q = receive(q, aView(2, [stepped(12, 7), stepped(7, 2), opened]));
+    expect(q.sounding).toEqual([opened]);
+  });
+
+  it('a reduced-motion queue still sounds the latest events once', () => {
+    let q = receive(createQueue({ reducedMotion: true }), aView(12, []));
+    q = receive(q, aView(2, [stepped(12, 7)]));
+    expect(q.sounding).toEqual([stepped(12, 7)]);
+  });
+
   it('advancing an idle queue changes nothing', () => {
     const q = receive(createQueue(), aView(12, []));
     expect(advance(q)).toEqual(q);

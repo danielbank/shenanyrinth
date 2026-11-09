@@ -14,7 +14,7 @@ import { buy, deposit, train } from './errands.ts';
 import { acceptLost, useItem } from './items.ts';
 import { checkDeeds, drawDeeds } from './deeds.ts';
 import { legalActions } from './legal.ts';
-import { passHost, presence, skipTurn, slap } from './table.ts';
+import { passHost, presence, skipTurn, slap, squeak } from './table.ts';
 import { discard } from './loot.ts';
 import { defend, startShakedown } from './shakedown.ts';
 import { allow, closeResponse, meddle, pass, resist, sway, SYSTEM } from './response.ts';
@@ -37,6 +37,7 @@ const FREE_FORM = new Set<Action['type']>([
   'presence',
   'skipTurn',
   'slap',
+  'squeak',
   'discard',
   'join',
   'setStats',
@@ -150,6 +151,8 @@ function handle(ctx: Ctx, actor: PlayerId, action: Action): void {
       return skipTurn(ctx, actor);
     case 'slap':
       return slap(ctx, actor, action.at);
+    case 'squeak':
+      return squeak(ctx, actor, action.at);
     case 'endTurn':
       return endTurn(ctx);
   }
@@ -198,6 +201,7 @@ function join(ctx: Ctx, actor: PlayerId, action: Extract<Action, { type: 'join' 
     relic: false,
     dungeonStreak: 0,
     lastSlapAt: null,
+    lastSqueakAt: null,
     shakeProtected: false,
     stoneskin: false,
   });
