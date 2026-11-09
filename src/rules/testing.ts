@@ -135,6 +135,8 @@ export function placed(
   if (copy.turn?.player === id && copy.turn.phase === 'prepare') {
     const building = level === 'town' ? TOWN.buildings[square] : undefined;
     copy.turn.passed = building ? [building] : [];
+    const onMob = level !== 'town' && copy.boards[level].mobs[square];
+    copy.turn.phase = onMob ? 'start' : 'prepare';
   }
   return copy;
 }

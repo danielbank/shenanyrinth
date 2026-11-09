@@ -112,4 +112,37 @@ export const FOREST_MOBS: MobDef[] = [
   forestMob('Treant', 10, 6, 8, 2, 2),
 ];
 
-export const MOBS: Record<string, MobDef> = Object.fromEntries(FOREST_MOBS.map((m) => [m.name, m]));
+const dungeonMob = (
+  name: string,
+  Fight: number,
+  Magic: number,
+  Trickery: number,
+  wounds: number,
+  trophy: number,
+  gold: number,
+): MobDef => ({ ...forestMob(name, Fight, Magic, Trickery, wounds, gold), damage: 2, trophy });
+
+export const DUNGEON_MOBS: MobDef[] = [
+  dungeonMob('Skeleton', 8, 12, 12, 2, 2, 3),
+  dungeonMob('Wraith', 12, 8, 10, 2, 2, 3),
+  dungeonMob('Gazer', 10, 12, 8, 2, 2, 3),
+  dungeonMob('Cave Troll', 12, 8, 10, 3, 3, 5),
+  dungeonMob('Necromancer', 8, 12, 12, 3, 3, 5),
+];
+
+/** The Guardian pays per Wound instead of on the kill. */
+export const GUARDIAN: MobDef = {
+  name: 'Red Wyrm',
+  dice: { Fight: 12, Magic: 10, Trickery: 8 },
+  weak: 'Trickery',
+  wounds: 3,
+  damage: 3,
+  trophy: 0,
+  gold: 0,
+};
+export const GUARDIAN_TROPHIES_PER_WOUND = 2;
+export const GUARDIAN_BONUS = 5;
+
+export const MOBS: Record<string, MobDef> = Object.fromEntries(
+  [...FOREST_MOBS, ...DUNGEON_MOBS, GUARDIAN].map((m) => [m.name, m]),
+);

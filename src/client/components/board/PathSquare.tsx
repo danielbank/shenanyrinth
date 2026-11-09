@@ -2,7 +2,7 @@ import { memo } from 'react';
 import type { Dir, PathLevel, SquareView } from '../../../rules/index.ts';
 import { ARTIFACT, COIN, HERB, PILE } from '../../art/itemSprites.ts';
 import { MOB_SPRITES } from '../../art/mobSprites.ts';
-import { GATE_SPRITE } from '../../art/townSprites.ts';
+import { GATE_SPRITE, STAIRS_DOWN_SPRITE, STAIRS_UP_SPRITE } from '../../art/townSprites.ts';
 import { PixelArt } from '../PixelArt.tsx';
 import styles from './PathSquare.module.css';
 
@@ -38,7 +38,17 @@ export const PathSquare = memo(function PathSquare({
       ) : null}
       <Contents square={square} tile={tile} />
       {square.feature?.type === 'gate' ? (
-        <PixelArt sprite={GATE_SPRITE} size={`${tile}px`} label={`Gate to the Town`} />
+        <PixelArt sprite={GATE_SPRITE} size={`${tile}px`} label="Gate to the Town" />
+      ) : null}
+      {square.feature?.type === 'stairs' ? (
+        <PixelArt
+          sprite={STAIRS_DOWN_SPRITE}
+          size={`${tile}px`}
+          label="Stairs down to the Dungeon"
+        />
+      ) : null}
+      {square.feature?.type === 'stairsUp' ? (
+        <PixelArt sprite={STAIRS_UP_SPRITE} size={`${tile}px`} label="Stairs up to the Forest" />
       ) : null}
     </div>
   );

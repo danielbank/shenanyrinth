@@ -8,7 +8,16 @@ import { collect } from './pickups.ts';
 import { die } from './rng.ts';
 import { stat } from './stats.ts';
 import { reveal } from './torchlight.ts';
-import type { Action, Dir, GameState, LevelName, MoveOutline, Player } from './types.ts';
+import type {
+  Action,
+  Dir,
+  Feature,
+  GameState,
+  LevelName,
+  MoveOutline,
+  PathLevel,
+  Player,
+} from './types.ts';
 
 export function levelSize(g: GameState, level: LevelName): number {
   return level === 'town' ? TOWN.size : g.boards[level].size;
@@ -116,6 +125,10 @@ export function featureDestination(
     const square = Object.entries(TOWN.gates).find(([, side]) => side === f.side)?.[0];
     return { level: 'town', square: Number(square) };
   }
+  if (f?.type === 'stairs')
+    return { level: 'dungeon', square: featureSquare(g, 'dungeon', 'stairsUp') };
+  if (f?.type === 'stairsUp')
+    return { level: 'forest', square: featureSquare(g, 'forest', 'stairs') };
   return null;
 }
 
@@ -142,4 +155,8 @@ export function chooseHeading(ctx: Ctx, p: Player, dir: Dir): void {
   p.heading = dir;
   ctx.g.turn!.choosingHeading = false;
   emit(ctx, { type: 'headingChosen', player: p.id, dir });
+}
+
+export function featureSquare(g: GameState, level: PathLevel, type: Feature['type']): number {
+  return Number(Object.entries(g.boards[level].features).find(([, f]) => f.type === type)?.[0]);
 }

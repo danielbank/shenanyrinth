@@ -71,3 +71,39 @@ export const BUILDING_NAMES: Record<Building, string> = {
   arcanist: 'Arcanist',
   guild: "Adventurer's Guild",
 };
+
+export const STAIRS_DOWN_SPRITE: Sprite = {
+  rows: [
+    'oooooooooooo',
+    'ossssssssso.',
+    'oddddddddso.',
+    'oddddddddso.',
+    'okkkkkkkdso.',
+    'okkkkkkkdso.',
+    'okkkkkkkkdo.',
+    'okkkkkkkkko.',
+    'okkkkkkkkko.',
+    'okkkkkkkkko.',
+    'okkkkkkkkko.',
+    'oooooooooooo',
+  ],
+  palette: { o, s: '#a9a2ad', d: '#6b5a4a', k: '#15121a' },
+};
+
+export const STAIRS_UP_SPRITE: Sprite = {
+  rows: [
+    '............',
+    '........ooo.',
+    '........oso.',
+    '......ooosо.',
+    '......ossso.',
+    '....ooosssо.',
+    '....osssssо.',
+    '..ooosssssо.',
+    '..ossssssso.',
+    'oooossssssо.',
+    'osssssssssо.',
+    'oooooooooooo',
+  ].map((r) => r.replaceAll('о', 'o')),
+  palette: { o, s: '#a9a2ad' },
+};

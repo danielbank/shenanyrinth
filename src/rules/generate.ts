@@ -66,13 +66,43 @@ function emptyBoard(g: GameState, cfg: LevelConfig): Board {
   };
 }
 
+/** Steps from `from` to every square, following Exits (-1 where unreachable). */
+export function stepCounts(board: Board, from: number): number[] {
+  const dist = board.tiles.map(() => -1);
+  dist[from] = 0;
+  const queue = [from];
+  for (let h = 0; h < queue.length; h++) {
+    const i = queue[h]!;
+    for (const d of board.tiles[i]!) {
+      const j = neighbour(board.size, i, d as Dir);
+      if (dist[j] === -1) {
+        dist[j] = dist[i]! + 1;
+        queue.push(j);
+      }
+    }
+  }
+  return dist;
+}
+
 export function generateDungeon(g: GameState): Board {
-  return emptyBoard(g, DUNGEON);
+  const board = emptyBoard(g, DUNGEON);
+  const side = DIRS[Math.floor(rnd(g) * 4)]!;
+  const up = edgeSquare(g, board.size, side);
+  board.features[up] = { type: 'stairsUp' };
+  const dist = stepCounts(board, up);
+  const far = Math.max(...dist);
+  const farthest = dist.flatMap((d, i) => (d === far ? [i] : []));
+  board.features[farthest[Math.floor(rnd(g) * farthest.length)]!] = { type: 'guardian' };
+  return board;
 }
 
 export function generateForest(g: GameState): Board {
   const size = FOREST.size;
   const board = emptyBoard(g, FOREST);
   for (const side of DIRS) board.features[edgeSquare(g, size, side)] = { type: 'gate', side };
+  const mid = (size - 3) / 2;
+  const x = mid + Math.floor(rnd(g) * 3);
+  const y = mid + Math.floor(rnd(g) * 3);
+  board.features[y * size + x] = { type: 'stairs' };
   return board;
 }

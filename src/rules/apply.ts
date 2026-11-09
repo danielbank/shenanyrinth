@@ -101,6 +101,7 @@ function join(ctx: Ctx, actor: PlayerId, action: Extract<Action, { type: 'join' 
     pack: { gold: 0, herbs: 0, artifacts: 0 },
     keep: 0,
     trophies: 0,
+    feat: false,
     level: 'town',
     square: TOWN.keepHall,
     heading: 'N',

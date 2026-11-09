@@ -40,7 +40,7 @@ export function endTurn(ctx: Ctx): void {
   const seat = g.seats.indexOf(turn.player);
   if (seat === g.seats.length - 1) {
     emit(ctx, { type: 'roundEnded', round: g.round });
-    if (g.round >= doomLimit(g)) {
+    if (g.endTriggered || g.round >= doomLimit(g)) {
       finish(ctx);
       return;
     }

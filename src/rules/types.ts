@@ -30,6 +30,8 @@ export interface Player {
   pack: Pack;
   keep: number;
   trophies: number;
+  /** Landed the Guardian's final Wound. */
+  feat: boolean;
   level: LevelName;
   square: number;
   heading: Dir;
@@ -37,7 +39,8 @@ export interface Player {
 }
 
 /** A fixed thing on a square; it stays put when Tiles are swapped. */
-export type Feature = { type: 'gate'; side: Dir };
+export type Feature =
+  { type: 'gate'; side: Dir } | { type: 'stairs' } | { type: 'stairsUp' } | { type: 'guardian' };
 
 export type Token = { type: 'gold'; amount: number } | { type: 'herbs' } | { type: 'artifacts' };
 
@@ -122,6 +125,8 @@ export interface GameState {
   turn: Turn | null;
   boards: Record<PathLevel, Board>;
   clash: Clash | null;
+  /** The feat was performed: the game ends after this Round. */
+  endTriggered: boolean;
 }
 
 export type Action =
@@ -199,6 +204,8 @@ export type GameEvent = Base &
       }
     | { type: 'mobKilled'; player: PlayerId; mob: string; trophies: number; gold: number }
     | { type: 'retreated'; player: PlayerId }
+    | { type: 'guardianWounded'; player: PlayerId; trophies: number }
+    | { type: 'feat'; player: PlayerId; bonus: number }
     | { type: 'knockedOut'; player: PlayerId; level: LevelName; square: number }
     | { type: 'turnEnded'; player: PlayerId }
     | { type: 'roundEnded'; round: number }

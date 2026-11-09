@@ -11,6 +11,8 @@ import { doomLimit } from './turns.ts';
 import type {
   Board,
   BoardView,
+  Feature,
+  PathLevel,
   MobState,
   MobView,
   GameEvent,
@@ -51,8 +53,8 @@ export function viewFor(state: GameState, viewer: PlayerId, events: GameEvent[] 
     turn: state.turn,
     town: { size: TOWN.size, buildings: TOWN.buildings, gates: TOWN.gates },
     boards: {
-      forest: boardView(state.boards.forest),
-      dungeon: boardView(state.boards.dungeon),
+      forest: boardView(state.boards.forest, 'forest'),
+      dungeon: boardView(state.boards.dungeon, 'dungeon'),
     },
     clash: state.clash,
     final:
@@ -63,13 +65,13 @@ export function viewFor(state: GameState, viewer: PlayerId, events: GameEvent[] 
   };
 }
 
-function boardView(board: Board): BoardView {
+function boardView(board: Board, level: PathLevel): BoardView {
   return {
     size: board.size,
     squares: board.tiles.map((exits, i) => ({
-      exits,
+      exits: level === 'forest' || board.revealed[i] ? exits : null,
       revealed: board.revealed[i] ?? false,
-      feature: board.features[i] ?? null,
+      feature: visibleFeature(board, i),
       token: (board.revealed[i] && board.tokens[i]) || null,
       pile: (board.revealed[i] && board.piles[i]) || null,
       mob: board.revealed[i] && board.mobs[i] ? mobView(board.mobs[i]) : null,
@@ -86,4 +88,11 @@ function mobView(mob: MobState): MobView {
     damage: def.damage,
     dice: def.dice,
   };
+}
+
+/** Gates are always in sight; every other Feature shows once revealed. */
+function visibleFeature(board: Board, i: number): Feature | null {
+  const f = board.features[i];
+  if (!f) return null;
+  return f.type === 'gate' || board.revealed[i] ? f : null;
 }

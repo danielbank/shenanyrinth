@@ -1,6 +1,14 @@
 /** Mobs, Ambushes and Clashes made of Exchanges. */
 import { emit, type Ctx } from './context.ts';
-import { APPROACHES, APPROACH_STAT, MOBS, type MobDef } from './data.ts';
+import {
+  APPROACHES,
+  APPROACH_STAT,
+  GUARDIAN,
+  GUARDIAN_BONUS,
+  GUARDIAN_TROPHIES_PER_WOUND,
+  MOBS,
+  type MobDef,
+} from './data.ts';
 import { emptySquare } from './pickups.ts';
 import { sendHome } from './home.ts';
 import { die, shuffle } from './rng.ts';
@@ -48,7 +56,8 @@ export function exchange(ctx: Ctx, p: Player, approach: Approach): void {
   const clash = g.clash!;
   const mob = g.boards[clash.level].mobs[clash.square]!;
   const def = mobDef(mob.kind);
-  const bonus = stat(p, APPROACH_STAT[approach]);
+  const guardian = def.name === GUARDIAN.name;
+  const bonus = stat(p, APPROACH_STAT[approach]) + (guardian ? stat(p, 'WIS') : 0);
   const mine = die(g, 6);
   const theirs = die(g, def.dice[approach]);
   const dice = [
@@ -68,6 +77,10 @@ export function exchange(ctx: Ctx, p: Player, approach: Approach): void {
   const winner = totals[0] > totals[1] ? 'player' : totals[0] < totals[1] ? 'mob' : 'tie';
   clash.last = { approach, dice, bonus: [bonus, 0], totals, winner };
   if (winner === 'player') mob.wounds++;
+  if (winner === 'player' && guardian) {
+    p.trophies += GUARDIAN_TROPHIES_PER_WOUND;
+    emit(ctx, { type: 'guardianWounded', player: p.id, trophies: GUARDIAN_TROPHIES_PER_WOUND });
+  }
   if (winner === 'mob') p.hp = Math.max(0, p.hp - def.damage);
   emit(ctx, {
     type: 'exchangeResolved',
@@ -96,6 +109,14 @@ function kill(ctx: Ctx, p: Player, def: MobDef): void {
     trophies: def.trophy,
     gold: def.gold,
   });
+  if (def.name === GUARDIAN.name) {
+    // The feat: the Guardian bonus goes straight into the Keep, and the end is triggered.
+    p.keep += GUARDIAN_BONUS;
+    p.feat = true;
+    g.endTriggered = true;
+    emit(ctx, { type: 'feat', player: p.id, bonus: GUARDIAN_BONUS });
+    return;
+  }
   const square = emptySquare(g, clash.level);
   if (square >= 0) board.mobs[square] = { kind: def.name, wounds: 0 };
 }

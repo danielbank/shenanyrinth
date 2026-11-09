@@ -99,5 +99,9 @@ function button(view: PlayerView, action: Action) {
 
 function takeLabel(view: PlayerView): string {
   const me = view.players.find((p) => p.id === view.you);
-  return me?.level === 'town' ? 'Take the Gate' : 'Take the Gate to Town';
+  if (!me || me.level === 'town') return 'Take the Gate';
+  const feature = view.boards[me.level].squares[me.square]?.feature;
+  if (feature?.type === 'stairs') return 'Take the Stairs down';
+  if (feature?.type === 'stairsUp') return 'Take the Stairs up';
+  return 'Take the Gate to Town';
 }

@@ -1,8 +1,11 @@
 /** Torchlight reveals the squares around each piece, permanently and for everyone. */
+import { stat } from './stats.ts';
 import type { GameState, PathLevel, Player } from './types.ts';
 
-export function torchRadius(_p: Player): number {
-  return 1;
+/** Foresight: 3×3 at WIS 0–2, 5×5 at 3–4, 7×7 at 5 and up. */
+export function torchRadius(p: Player): number {
+  const wis = stat(p, 'WIS');
+  return wis >= 5 ? 3 : wis >= 3 ? 2 : 1;
 }
 
 export function reveal(g: GameState, p: Player): void {
