@@ -61,6 +61,7 @@ function emptyBoard(g: GameState, cfg: LevelConfig): Board {
     revealed: Array.from({ length: cfg.size * cfg.size }, () => false),
     features: {},
     tokens: {},
+    mobs: {},
     piles: {},
   };
 }

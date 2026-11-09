@@ -4,6 +4,7 @@
  * A Player can skip ahead, reduced-motion devices never animate, and a Response window
  * fast-forwards straight to the dice.
  */
+import { TOWN } from '../rules/data.ts';
 import type { GameEvent, LevelName, PlayerView } from '../rules/index.ts';
 
 export interface PieceAt {
@@ -25,15 +26,14 @@ export interface Queue {
 }
 
 /** Events that have an animation; everything else applies at once. */
-const ANIMATED = new Set<GameEvent['type']>(['stepped', 'rolled']);
+const ANIMATED = new Set<GameEvent['type']>(['stepped', 'rolled', 'exchangeRolled']);
 
 export function createQueue({ reducedMotion = false } = {}): Queue {
   return { reducedMotion, playing: null, pending: [], view: null, shown: {}, settled: true };
 }
 
 export function receive(q: Queue, view: PlayerView): Queue {
-  const fresh = view.events.filter((e) => ANIMATED.has(e.type));
-  const next: Queue = { ...q, view, pending: [...q.pending, ...fresh] };
+  const next: Queue = { ...q, view, pending: [...q.pending, ...view.events] };
   if (q.reducedMotion || !q.view) return skip(next);
   return q.playing ? next : playNext(next);
 }
@@ -62,10 +62,17 @@ export function piecesShown(q: Queue): Record<string, PieceAt> {
   return q.shown;
 }
 
+/** Start the next animated event, applying any instant ones on the way. */
 function playNext(q: Queue): Queue {
-  const [first, ...rest] = q.pending;
-  if (!first) return settle({ ...q, playing: null });
-  return { ...q, playing: first, pending: rest, settled: false };
+  let shown = q.shown;
+  for (let k = 0; k < q.pending.length; k++) {
+    const e = q.pending[k]!;
+    if (ANIMATED.has(e.type)) {
+      return { ...q, shown, playing: e, pending: q.pending.slice(k + 1), settled: false };
+    }
+    shown = applyEvent(shown, e);
+  }
+  return settle({ ...q, shown, playing: null, pending: [] });
 }
 
 function settle(q: Queue): Queue {
@@ -76,6 +83,14 @@ function settle(q: Queue): Queue {
 }
 
 function applyEvent(shown: Record<string, PieceAt>, e: GameEvent): Record<string, PieceAt> {
-  if (e.type === 'stepped') return { ...shown, [e.player]: { level: e.level, square: e.to } };
-  return shown;
+  switch (e.type) {
+    case 'stepped':
+      return { ...shown, [e.player]: { level: e.level, square: e.to } };
+    case 'travelled':
+      return { ...shown, [e.player]: e.to };
+    case 'sentHome':
+      return { ...shown, [e.player]: { level: 'town', square: TOWN.keepHall } };
+    default:
+      return shown;
+  }
 }

@@ -14,6 +14,7 @@ export function emptySquare(g: GameState, level: PathLevel): number {
         !board.features[i] &&
         !board.tokens[i] &&
         !board.piles[i] &&
+        !board.mobs[i] &&
         !g.players.some((p) => p.level === level && p.square === i),
     );
   return free.length ? free[Math.floor(rnd(g) * free.length)]! : -1;

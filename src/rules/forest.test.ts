@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { applyAction, viewFor } from './index.ts';
-import { aGame, act, forceRolls, placed, player, sq, withPlayer, withTiles } from './testing.ts';
+import {
+  aGame,
+  emptied,
+  act,
+  forceRolls,
+  placed,
+  player,
+  sq,
+  withPlayer,
+  withTiles,
+} from './testing.ts';
 import type { GameState } from './index.ts';
 
 const OPEN = [
@@ -21,7 +31,7 @@ function inForest(x: number, y: number, h: 'N' | 'E' | 'S' | 'W', row4?: string,
   const rows = [...OPEN];
   if (row4) rows[4] = row4;
   let g = aGame({ stats: [{ STR: 3, CON: 3, ...stats }] });
-  g = withTiles(g, 'forest', rows);
+  g = emptied(withTiles(g, 'forest', rows), 'forest');
   return placed(g, 'p1', 'forest', s9(x, y), h);
 }
 const roll = (g: GameState, n: number) => act(forceRolls(g, n), 'p1', { type: 'roll' });

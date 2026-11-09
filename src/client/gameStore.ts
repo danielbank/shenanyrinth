@@ -34,6 +34,7 @@ export function durationOf(e: GameEvent): number {
     case 'stepped':
       return 220;
     case 'rolled':
+    case 'exchangeRolled':
       return 650;
     default:
       return 300;

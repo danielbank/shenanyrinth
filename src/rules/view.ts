@@ -1,5 +1,6 @@
 /** The rules engine's view seam: what one Player sees, their legal options and their events. */
 import { TOWN } from './data.ts';
+import { mobDef } from './clash.ts';
 import { currentPlayer } from './context.ts';
 import { legalActions } from './legal.ts';
 import { moveOutlines } from './movement.ts';
@@ -10,6 +11,8 @@ import { doomLimit } from './turns.ts';
 import type {
   Board,
   BoardView,
+  MobState,
+  MobView,
   GameEvent,
   GameState,
   PlayerId,
@@ -51,6 +54,7 @@ export function viewFor(state: GameState, viewer: PlayerId, events: GameEvent[] 
       forest: boardView(state.boards.forest),
       dungeon: boardView(state.boards.dungeon),
     },
+    clash: state.clash,
     final:
       state.phase === 'over' ? { scores: state.players.map(score), winners: winners(state) } : null,
     options: legalActions(state, viewer),
@@ -68,6 +72,18 @@ function boardView(board: Board): BoardView {
       feature: board.features[i] ?? null,
       token: (board.revealed[i] && board.tokens[i]) || null,
       pile: (board.revealed[i] && board.piles[i]) || null,
+      mob: board.revealed[i] && board.mobs[i] ? mobView(board.mobs[i]) : null,
     })),
+  };
+}
+
+function mobView(mob: MobState): MobView {
+  const def = mobDef(mob.kind);
+  return {
+    kind: mob.kind,
+    wounds: mob.wounds,
+    maxWounds: def.wounds,
+    damage: def.damage,
+    dice: def.dice,
   };
 }

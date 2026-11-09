@@ -1,0 +1,45 @@
+.panel {
+  position: absolute;
+  left: 50%;
+  bottom: calc(52px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 5;
+  width: min(380px, calc(100% - 16px));
+  background: var(--panel);
+  border: 3px solid var(--outline);
+  padding: 8px;
+  display: grid;
+  gap: 8px;
+}
+.head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.wounds {
+  color: var(--danger);
+  letter-spacing: 2px;
+}
+.duel {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  font-size: 13px;
+}
+.total {
+  font-size: 20px;
+  font-weight: bold;
+}
+.result {
+  color: var(--gold);
+}
+.actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.actions button {
+  flex: 1 1 30%;
+}

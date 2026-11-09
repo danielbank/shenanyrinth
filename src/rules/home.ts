@@ -32,6 +32,7 @@ export function sendHome(ctx: Ctx, p: Player): void {
   p.level = 'town';
   p.square = TOWN.keepHall;
   p.hp = maxHp(p);
+  emit(ctx, { type: 'sentHome', player: p.id });
   endTurn(ctx);
 }
 

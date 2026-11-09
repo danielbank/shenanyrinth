@@ -9,6 +9,7 @@ import {
   TOWN,
 } from './data.ts';
 import { RuleError } from './errors.ts';
+import { exchange, moveAway, resumeClash, retreat } from './clash.ts';
 import { deposit } from './errands.ts';
 import { legalActions } from './legal.ts';
 import { chooseHeading, endMove, roll, step, takeFeature } from './movement.ts';
@@ -65,6 +66,14 @@ function handle(ctx: Ctx, actor: PlayerId, action: Action): void {
       return chooseHeading(ctx, me(g), action.dir);
     case 'deposit':
       return deposit(ctx, me(g), action.amount);
+    case 'exchange':
+      return exchange(ctx, me(g), action.approach);
+    case 'retreat':
+      return retreat(ctx, me(g));
+    case 'resumeClash':
+      return resumeClash(ctx, me(g));
+    case 'moveAway':
+      return moveAway(ctx);
     case 'endTurn':
       return endTurn(ctx);
   }

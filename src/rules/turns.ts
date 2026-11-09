@@ -28,6 +28,7 @@ export function startTurn(ctx: Ctx, seat: number): void {
   };
   const building = p.level === 'town' ? TOWN.buildings[p.square] : undefined;
   if (building) g.turn.passed.push(building);
+  if (p.level !== 'town' && g.boards[p.level].mobs[p.square]) g.turn.phase = 'start';
   emit(ctx, { type: 'turnStarted', player: p.id, round: g.round });
 }
 

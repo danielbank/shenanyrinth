@@ -4,6 +4,7 @@ import type { GameState } from './index.ts';
 import {
   aGame,
   act,
+  emptied,
   forceRolls,
   placed,
   player,
@@ -23,7 +24,7 @@ const tokensOf = (g: GameState) => Object.values(g.boards.forest.tokens);
 
 function inForest(x: number, y: number, h: 'N' | 'E' | 'S' | 'W' = 'E') {
   let g = aGame({ stats: [{ STR: 3, CON: 3 }] });
-  g = withTiles(g, 'forest', OPEN);
+  g = emptied(withTiles(g, 'forest', OPEN), 'forest');
   return placed(g, 'p1', 'forest', s9(x, y), h);
 }
 

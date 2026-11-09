@@ -74,6 +74,18 @@ function button(view: PlayerView, action: Action) {
           ⇢{ARROW[action.dir]}
         </button>,
       ];
+    case 'resumeClash':
+      return [
+        <button key="resume" type="button" onClick={go}>
+          ⚔ Resume the Clash
+        </button>,
+      ];
+    case 'moveAway':
+      return [
+        <button key="away" type="button" onClick={go}>
+          Move away
+        </button>,
+      ];
     case 'endTurn':
       return [
         <button key="end" type="button" onClick={go}>

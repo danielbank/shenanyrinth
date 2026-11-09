@@ -2,6 +2,7 @@
 import { DIRS, neighbour, OPPOSITE } from './board.ts';
 import { emit, type Ctx } from './context.ts';
 import { TOWN } from './data.ts';
+import { ambush, mobUnder } from './clash.ts';
 import { arriveInTown, sendHome } from './home.ts';
 import { collect } from './pickups.ts';
 import { die } from './rng.ts';
@@ -71,6 +72,7 @@ export function step(ctx: Ctx, p: Player, dir: Dir): void {
   if (p.level === 'town') arriveInTown(ctx, p);
   else collect(ctx, p);
   turn.onFeature = featureDestination(g, p) !== null;
+  if (mobUnder(g, p)) return ambush(ctx, p);
   if (turn.free) {
     if (turn.stepsLeft === 0) endMove(ctx);
     return;

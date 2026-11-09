@@ -1,5 +1,6 @@
 /** Every enumerable action a Player may take right now. */
 import { currentPlayer } from './context.ts';
+import { clashOptions } from './clash.ts';
 import { errandOptions } from './errands.ts';
 import { headingOptions, stepOptions } from './movement.ts';
 import type { Action, GameState, PlayerId } from './types.ts';
@@ -10,7 +11,11 @@ export function legalActions(g: GameState, id: PlayerId): Action[] {
   if (g.phase !== 'playing' || !g.turn) return out;
   const p = currentPlayer(g);
   if (!p || p.id !== id) return out;
+  if (g.clash) return clashOptions(g);
   switch (g.turn.phase) {
+    case 'start':
+      out.push({ type: 'resumeClash' }, { type: 'moveAway' });
+      break;
     case 'prepare':
       out.push({ type: 'roll' });
       break;

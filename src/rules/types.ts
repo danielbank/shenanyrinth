@@ -1,5 +1,5 @@
 /** Every type in the rules engine. Vocabulary follows GLOSSARY.md. */
-import type { COLOURS, HEROES, STATS } from './data.ts';
+import type { ApproachName, COLOURS, HEROES, STATS } from './data.ts';
 
 export type PlayerId = string;
 export type Hero = (typeof HEROES)[number];
@@ -41,6 +41,13 @@ export type Feature = { type: 'gate'; side: Dir };
 
 export type Token = { type: 'gold'; amount: number } | { type: 'herbs' } | { type: 'artifacts' };
 
+export type Approach = ApproachName;
+
+export interface MobState {
+  kind: string;
+  wounds: number;
+}
+
 export interface Board {
   size: number;
   /** Each square's Exits, in N E S W order, e.g. 'NS'. */
@@ -49,6 +56,7 @@ export interface Board {
   revealed: boolean[];
   features: Record<number, Feature>;
   tokens: Record<number, Token>;
+  mobs: Record<number, MobState>;
   /** What Lost and Knocked Out Players dropped. */
   piles: Record<number, Pack>;
 }
@@ -56,7 +64,33 @@ export interface Board {
 export type PathLevel = 'forest' | 'dungeon';
 
 export type Phase = 'lobby' | 'setup' | 'playing' | 'over';
-export type TurnPhase = 'prepare' | 'move' | 'after';
+export type TurnPhase = 'start' | 'prepare' | 'move' | 'after';
+
+/** One die on the table in a Clash or Shakedown, face-up for everyone. */
+export interface DieInPlay {
+  id: number;
+  /** The Player whose side it counts for, or 'mob'. */
+  owner: PlayerId | 'mob';
+  faces: number;
+  value: number;
+}
+
+export interface ExchangeResult {
+  approach: Approach;
+  dice: DieInPlay[];
+  bonus: [number, number];
+  totals: [number, number];
+  winner: 'player' | 'mob' | 'tie';
+}
+
+export interface Clash {
+  player: PlayerId;
+  level: PathLevel;
+  square: number;
+  exchanges: number;
+  /** The latest Exchange, face-up for everyone. */
+  last: ExchangeResult | null;
+}
 
 export interface Turn {
   player: PlayerId;
@@ -87,6 +121,7 @@ export interface GameState {
   round: number;
   turn: Turn | null;
   boards: Record<PathLevel, Board>;
+  clash: Clash | null;
 }
 
 export type Action =
@@ -99,6 +134,10 @@ export type Action =
   | { type: 'takeFeature' }
   | { type: 'chooseHeading'; dir: Dir }
   | { type: 'deposit'; amount: number }
+  | { type: 'exchange'; approach: Approach }
+  | { type: 'retreat' }
+  | { type: 'resumeClash' }
+  | { type: 'moveAway' }
   | { type: 'endTurn' };
 
 interface Base {
@@ -128,6 +167,7 @@ export type GameEvent = Base &
       }
     | { type: 'headingChosen'; player: PlayerId; dir: Dir }
     | { type: 'lost'; player: PlayerId; level: LevelName; square: number }
+    | { type: 'sentHome'; player: PlayerId }
     | { type: 'dropped'; player: PlayerId; level: LevelName; square: number; pile: Pack }
     | {
         type: 'pickedUp';
@@ -139,6 +179,27 @@ export type GameEvent = Base &
       }
     | { type: 'deposited'; player: PlayerId; amount: number }
     | { type: 'healed'; player: PlayerId; hp: number }
+    | { type: 'ambushed'; player: PlayerId; level: PathLevel; square: number; mob: string }
+    | {
+        type: 'exchangeRolled';
+        player: PlayerId;
+        approach: Approach;
+        mob: string;
+        dice: DieInPlay[];
+        /** Stat bonuses: the Player's, then the Mob's. */
+        bonus: [number, number];
+      }
+    | {
+        type: 'exchangeResolved';
+        player: PlayerId;
+        winner: 'player' | 'mob' | 'tie';
+        totals: [number, number];
+        mobWounds: number;
+        hp: number;
+      }
+    | { type: 'mobKilled'; player: PlayerId; mob: string; trophies: number; gold: number }
+    | { type: 'retreated'; player: PlayerId }
+    | { type: 'knockedOut'; player: PlayerId; level: LevelName; square: number }
     | { type: 'turnEnded'; player: PlayerId }
     | { type: 'roundEnded'; round: number }
     | { type: 'gameOver'; winners: PlayerId[] }
@@ -197,6 +258,15 @@ export interface SquareView {
   /** Contents show only once revealed. */
   token: Token | null;
   pile: Pack | null;
+  mob: MobView | null;
+}
+
+export interface MobView {
+  kind: string;
+  wounds: number;
+  maxWounds: number;
+  damage: number;
+  dice: Record<Approach, number>;
 }
 
 export interface BoardView {
@@ -215,6 +285,7 @@ export interface PlayerView {
   turn: Turn | null;
   town: TownView;
   boards: Record<PathLevel, BoardView>;
+  clash: Clash | null;
   final: { scores: Score[]; winners: PlayerId[] } | null;
   options: Action[];
   /** Where each legal step leads, for outlining on the board. */

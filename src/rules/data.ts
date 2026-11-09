@@ -70,3 +70,46 @@ export const DUNGEON: LevelConfig = {
 };
 
 export const LEVELS = { forest: FOREST, dungeon: DUNGEON };
+
+export const APPROACHES = ['Fight', 'Magic', 'Trickery'] as const;
+export type ApproachName = (typeof APPROACHES)[number];
+export const APPROACH_STAT = { Fight: 'STR', Magic: 'INT', Trickery: 'DEX' } as const;
+
+export interface MobDef {
+  name: string;
+  dice: Record<ApproachName, number>;
+  /** The ★ Approach: its smallest die. */
+  weak: ApproachName;
+  wounds: number;
+  damage: number;
+  trophy: number;
+  gold: number;
+}
+
+const forestMob = (
+  name: string,
+  Fight: number,
+  Magic: number,
+  Trickery: number,
+  wounds: number,
+  gold: number,
+): MobDef => ({
+  name,
+  dice: { Fight, Magic, Trickery },
+  weak: Fight < Magic && Fight < Trickery ? 'Fight' : Magic < Trickery ? 'Magic' : 'Trickery',
+  wounds,
+  damage: 1,
+  trophy: 1,
+  gold,
+});
+
+export const FOREST_MOBS: MobDef[] = [
+  forestMob('Goblin', 8, 8, 6, 1, 1),
+  forestMob('Myconid', 6, 8, 10, 1, 1),
+  forestMob('Pixie', 10, 6, 8, 1, 1),
+  forestMob('Dire Wolf', 6, 8, 10, 2, 2),
+  forestMob('Bandit', 6, 8, 10, 2, 2),
+  forestMob('Treant', 10, 6, 8, 2, 2),
+];
+
+export const MOBS: Record<string, MobDef> = Object.fromEntries(FOREST_MOBS.map((m) => [m.name, m]));

@@ -77,6 +77,28 @@ describe('The client event queue', () => {
     expect(q.settled).toBe(true);
   });
 
+  it('a piece that changes Level jumps there at once, between slides', () => {
+    let q = receive(createQueue(), aView(12, []));
+    const travelled: GameEvent = {
+      type: 'travelled',
+      player: 'p1',
+      from: { level: 'town', square: 7 },
+      to: { level: 'forest', square: 40 },
+    };
+    q = receive(q, aView(41, [stepped(12, 7), travelled, stepped(40, 41)]));
+    q = advance(q);
+    expect(q.playing).toEqual(stepped(40, 41));
+    expect(piecesShown(q).p1).toEqual({ level: 'forest', square: 40 });
+  });
+
+  it('a piece sent home appears at its Keep', () => {
+    let q = receive(createQueue(), aView(12, []));
+    const home: GameEvent = { type: 'sentHome', player: 'p1' };
+    q = receive(q, aView(12, [stepped(40, 41), home, stepped(12, 7)]));
+    q = advance(q);
+    expect(piecesShown(q).p1).toEqual({ level: 'town', square: 12 });
+  });
+
   it('fast-forward drops everything before the first matching event', () => {
     let q = receive(createQueue(), aView(12, []));
     const dice: GameEvent = { type: 'rolled', player: 'p1', value: 3, steps: 3 };

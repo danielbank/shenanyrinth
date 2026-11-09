@@ -4,6 +4,7 @@ import { gameStore } from '../gameStore.ts';
 import { useGame } from '../useGame.ts';
 import { Board } from './board/Board.tsx';
 import { LevelTabs } from './hud/LevelTabs.tsx';
+import { ClashPanel } from './ClashPanel.tsx';
 import { Errands } from './Errands.tsx';
 import { FinalScores } from './FinalScores.tsx';
 import { Chips } from './hud/Chips.tsx';
@@ -37,6 +38,7 @@ export function Game({ view }: { view: PlayerView }) {
         <Vitals view={view} />
       </div>
       {queue.settled ? <Errands view={view} /> : null}
+      {queue.settled ? <ClashPanel view={view} /> : null}
       {view.final ? <FinalScores view={view} /> : null}
     </div>
   );

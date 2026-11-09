@@ -159,3 +159,26 @@ export function revealAll(g: GameState, level: 'forest' | 'dungeon'): GameState 
   copy.boards[level].revealed = copy.boards[level].revealed.map(() => true);
   return copy;
 }
+
+/** Make `kind` the only Mob on a Level, at `square`. */
+export function withMob(
+  g: GameState,
+  level: 'forest' | 'dungeon',
+  square: number,
+  kind: string,
+  wounds = 0,
+): GameState {
+  const copy = structuredClone(g);
+  copy.boards[level].mobs = { [square]: { kind, wounds } };
+  return copy;
+}
+
+/** Clear a Level of Mobs, tokens and piles. */
+export function emptied(g: GameState, level: 'forest' | 'dungeon'): GameState {
+  const copy = structuredClone(g);
+  const board = copy.boards[level];
+  board.mobs = {};
+  board.tokens = {};
+  board.piles = {};
+  return copy;
+}

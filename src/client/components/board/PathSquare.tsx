@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import type { Dir, PathLevel, SquareView } from '../../../rules/index.ts';
 import { ARTIFACT, COIN, HERB, PILE } from '../../art/itemSprites.ts';
+import { MOB_SPRITES } from '../../art/mobSprites.ts';
 import { GATE_SPRITE } from '../../art/townSprites.ts';
 import { PixelArt } from '../PixelArt.tsx';
 import styles from './PathSquare.module.css';
@@ -56,6 +57,13 @@ function Contents({ square, tile }: { square: SquareView; tile: number }) {
         <PixelArt sprite={ARTIFACT} size={size} label="Artifact" />
       ) : null}
       {square.pile ? <PixelArt sprite={PILE} size={size} label="A dropped pile" /> : null}
+      {square.mob ? (
+        <PixelArt
+          sprite={MOB_SPRITES[square.mob.kind] ?? MOB_SPRITES.Goblin!}
+          size={`${tile}px`}
+          label={`${square.mob.kind}, ${square.mob.wounds}/${square.mob.maxWounds} Wounds`}
+        />
+      ) : null}
     </>
   );
 }
