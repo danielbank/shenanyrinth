@@ -17,6 +17,8 @@ export function newGame({ seed }: { seed: number }): GameState {
     turn: null,
     boards: {} as GameState['boards'],
     clash: null,
+    response: null,
+    nextResponseId: 1,
     nextItemId: 1,
     endTriggered: false,
   };

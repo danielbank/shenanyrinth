@@ -14,7 +14,21 @@ export interface ServerOptions {
   seed?: number;
   /** Folder to save the game in after every change; reloaded on start. */
   saveDir?: string;
+  /** Time for the Response window timer; tests pass a fake one. */
+  clock?: Clock;
 }
+
+export interface Clock {
+  now(): number;
+  setTimeout(fn: () => void, ms: number): unknown;
+  clearTimeout(handle: unknown): void;
+}
+
+const realClock: Clock = {
+  now: () => Date.now(),
+  setTimeout: (fn, ms) => setTimeout(fn, ms),
+  clearTimeout: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>),
+};
 
 export interface RunningServer {
   url: string;
@@ -35,7 +49,11 @@ export async function startServer(options: ServerOptions = {}): Promise<RunningS
   const http = createServer(app);
   const io = new Server(http);
   const { saveDir } = options;
-  const table = new Table(saveDir ? loadSnapshot(saveDir) : undefined, options.seed);
+  const table = new Table(
+    saveDir ? loadSnapshot(saveDir) : undefined,
+    options.seed ?? Date.now(),
+    options.clock ?? realClock,
+  );
   if (saveDir) table.onChange(() => saveSnapshot(saveDir, table.snapshot()));
 
   table.onChange((events) => {

@@ -42,6 +42,9 @@ export interface Player {
   square: number;
   heading: Dir;
   pivots: number;
+  sway: number;
+  resist: number;
+  autoPass: boolean;
 }
 
 /** A fixed thing on a square; it stays put when Tiles are swapped. */
@@ -73,7 +76,17 @@ export interface Board {
 export type PathLevel = 'forest' | 'dungeon';
 
 export type ItemKind =
-  'boots' | 'compass' | 'tonic' | 'draught' | 'teleport' | 'twirlwater' | 'orb' | 'stones';
+  | 'boots'
+  | 'compass'
+  | 'tonic'
+  | 'draught'
+  | 'teleport'
+  | 'twirlwater'
+  | 'orb'
+  | 'stones'
+  | 'knucklebone'
+  | 'coin'
+  | 'hush';
 
 export interface Item {
   id: number;
@@ -92,6 +105,39 @@ export interface DieInPlay {
   owner: PlayerId | 'mob';
   faces: number;
   value: number;
+  /** The last Player to Sway or Meddle with it, for the glow. */
+  touchedBy?: PlayerId;
+}
+
+export interface RollSide {
+  owner: PlayerId | 'mob';
+  bonus: number;
+}
+
+export type ResponseEffect =
+  | { kind: 'sway'; die: number; delta: 1 | -1 }
+  | { kind: 'coin'; dice: [number, number] }
+  | { kind: 'hush'; die: number };
+
+/** A Meddle or Sway waiting on the Resist prompt of the Players it hurts. */
+export interface PendingEffect {
+  by: PlayerId;
+  effect: ResponseEffect;
+  targets: PlayerId[];
+  allowed: PlayerId[];
+}
+
+/** The pause after the dice in a Clash or Shakedown. */
+export interface ResponseWindow {
+  id: number;
+  kind: 'clash' | 'shakedown';
+  sides: [RollSide, RollSide];
+  dice: DieInPlay[];
+  nextDie: number;
+  /** Players who can act now (Sway left or a usable dice item, and not auto-passing). */
+  eligible: PlayerId[];
+  passed: PlayerId[];
+  pending: PendingEffect | null;
 }
 
 export interface ExchangeResult {
@@ -109,6 +155,8 @@ export interface Clash {
   exchanges: number;
   /** The latest Exchange, face-up for everyone. */
   last: ExchangeResult | null;
+  /** The Approach of the Exchange being rolled. */
+  approach: Approach | null;
 }
 
 export interface Turn {
@@ -130,6 +178,8 @@ export interface Turn {
   wander: boolean;
   /** About to be Lost, with a Twirlwater in hand. */
   stuck: boolean;
+  /** Steps taken this Turn. */
+  stepped: number;
 }
 
 export interface GameState {
@@ -145,6 +195,8 @@ export interface GameState {
   turn: Turn | null;
   boards: Record<PathLevel, Board>;
   clash: Clash | null;
+  response: ResponseWindow | null;
+  nextResponseId: number;
   nextItemId: number;
   /** The feat was performed: the game ends after this Round. */
   endTriggered: boolean;
@@ -173,7 +225,16 @@ export type Action =
       b?: number;
       turnA?: number;
       turnB?: number;
+      /** Trickster's Coin: the two dice to swap. Hush Rune: `die`. */
+      dice?: [number, number];
+      die?: number;
     }
+  | { type: 'sway'; die: number; delta: 1 | -1 }
+  | { type: 'pass' }
+  | { type: 'resist' }
+  | { type: 'allow' }
+  | { type: 'closeResponse'; id: number }
+  | { type: 'setAutoPass'; on: boolean }
   | { type: 'acceptLost' }
   | { type: 'exchange'; approach: Approach }
   | { type: 'retreat' }
@@ -225,6 +286,13 @@ export type GameEvent = Base &
     | { type: 'used'; player: PlayerId; kind: ItemKind; square?: number; a?: number; b?: number }
     | { type: 'teleported'; player: PlayerId; level: LevelName; from: number; to: number }
     | { type: 'crumbled'; player: PlayerId; kind: ItemKind }
+    | { type: 'responseOpened'; id: number; dice: DieInPlay[]; eligible: PlayerId[] }
+    | { type: 'swayed'; player: PlayerId; die: number; delta: number }
+    | { type: 'meddled'; player: PlayerId; kind: ItemKind; dice: number[] }
+    | { type: 'resisted'; player: PlayerId; against: PlayerId }
+    | { type: 'diceChanged'; dice: DieInPlay[] }
+    | { type: 'passed'; player: PlayerId }
+    | { type: 'responseClosed'; id: number }
     | { type: 'healed'; player: PlayerId; hp: number }
     | { type: 'ambushed'; player: PlayerId; level: PathLevel; square: number; mob: string }
     | {
@@ -279,6 +347,9 @@ export interface PublicPlayer {
 }
 
 export interface PrivatePlayer {
+  sway: number;
+  resist: number;
+  autoPass: boolean;
   pack: Pack;
   keep: number;
   base: Stats;
@@ -345,10 +416,13 @@ export interface PlayerView {
   town: TownView;
   boards: Record<PathLevel, BoardView>;
   clash: Clash | null;
+  response: ResponseWindow | null;
   final: { scores: Score[]; winners: PlayerId[] } | null;
   options: Action[];
   /** Carried items the Player may use now that need a target square. */
   aimable: Item[];
+  /** Milliseconds left in the open Response window when this view was sent; set by the server. */
+  responseMsLeft?: number;
   /** Every legal purchase or Training, with its name and Haggled price. */
   offers: Offer[];
   /** Where each legal step leads, for outlining on the board. */

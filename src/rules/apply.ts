@@ -13,6 +13,7 @@ import { exchange, moveAway, resumeClash, retreat } from './clash.ts';
 import { buy, deposit, train } from './errands.ts';
 import { acceptLost, useItem } from './items.ts';
 import { legalActions } from './legal.ts';
+import { allow, closeResponse, meddle, pass, resist, sway, SYSTEM } from './response.ts';
 import {
   becomeLost,
   chooseHeading,
@@ -27,7 +28,13 @@ import { endTurn, startTurn } from './turns.ts';
 import type { Action, ActionResult, GameState, Player, PlayerId, Stats } from './types.ts';
 
 /** Actions whose parameters are free-form, so they are checked by hand instead of against the legal list. */
-const FREE_FORM = new Set<Action['type']>(['join', 'setStats', 'use']);
+const FREE_FORM = new Set<Action['type']>([
+  'join',
+  'setStats',
+  'use',
+  'closeResponse',
+  'setAutoPass',
+]);
 
 /** The rules engine's action seam: the next state plus the ordered list of what just happened. */
 export function applyAction(state: GameState, actor: PlayerId, action: Action): ActionResult {
@@ -89,10 +96,31 @@ function handle(ctx: Ctx, actor: PlayerId, action: Action): void {
       return train(ctx, me(g), action.stat);
     case 'compass':
       return compassTurn(ctx, me(g), action.dir);
-    case 'use':
-      if (g.turn?.player !== actor || g.phase !== 'playing')
+    case 'use': {
+      const p = findPlayer(g, actor);
+      if (p && g.response) return meddle(ctx, p, action);
+      if (g.turn?.player !== actor || g.phase !== 'playing') {
         throw new RuleError("It's not your Turn");
+      }
       return useItem(ctx, me(g), action);
+    }
+    case 'sway':
+      return sway(ctx, findPlayer(g, actor)!, action.die, action.delta);
+    case 'pass':
+      return pass(ctx, findPlayer(g, actor)!);
+    case 'resist':
+      return resist(ctx, findPlayer(g, actor)!);
+    case 'allow':
+      return allow(ctx, findPlayer(g, actor)!);
+    case 'closeResponse':
+      if (actor !== SYSTEM) throw new RuleError('Only the server closes a Response window');
+      return closeResponse(ctx, action.id);
+    case 'setAutoPass': {
+      const p = findPlayer(g, actor);
+      if (!p) throw new RuleError('Join the table first');
+      p.autoPass = action.on === true;
+      return;
+    }
     case 'acceptLost':
       return acceptLost(ctx, me(g), becomeLost);
     case 'endTurn':
@@ -130,6 +158,9 @@ function join(ctx: Ctx, actor: PlayerId, action: Extract<Action, { type: 'join' 
     square: TOWN.keepHall,
     heading: 'N',
     pivots: 0,
+    sway: 0,
+    resist: 0,
+    autoPass: false,
   });
   g.hostId ??= actor;
   emit(ctx, { type: 'joined', player: actor });
@@ -161,6 +192,8 @@ function setStats(ctx: Ctx, actor: PlayerId, stats: Stats): void {
   }
   p.base = Object.fromEntries(STATS.map((s) => [s, stats[s]])) as Stats;
   p.hp = HP_BASE + p.base.CON;
+  p.sway = p.base.CHA;
+  p.resist = p.base.CON;
   p.setupDone = true;
   emit(ctx, { type: 'statsSet', player: p.id });
   if (g.players.every((x) => x.setupDone)) {

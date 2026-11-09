@@ -7,6 +7,7 @@ import { rotationsThatFit } from './generate.ts';
 import { arriveInTown } from './home.ts';
 import { endMove } from './movement.ts';
 import { collect } from './pickups.ts';
+import { die } from './rng.ts';
 import { maxHp } from './stats.ts';
 import { reveal, revealArea } from './torchlight.ts';
 import type { Action, GameState, Item, ItemKind, Player } from './types.ts';
@@ -27,6 +28,9 @@ function usableNow(g: GameState, p: Player, kind: ItemKind): boolean {
       return turn.phase === 'prepare';
     case 'twirlwater':
       return turn.phase === 'prepare' || turn.phase === 'move';
+    case 'knucklebone':
+      // Any roll of yours: the movement roll, before the first step.
+      return turn.phase === 'move' && turn.stepped === 0;
     case 'orb':
     case 'stones':
       return path && (turn.phase === 'prepare' || turn.phase === 'after') && !g.clash;
@@ -36,7 +40,7 @@ function usableNow(g: GameState, p: Player, kind: ItemKind): boolean {
 }
 
 /** Items that need no target, offered as ready-made actions. */
-const NO_TARGET = new Set<ItemKind>(['tonic', 'draught', 'twirlwater']);
+const NO_TARGET = new Set<ItemKind>(['tonic', 'draught', 'twirlwater', 'knucklebone']);
 
 export function itemOptions(g: GameState, p: Player): Action[] {
   if (g.turn!.stuck) {
@@ -77,6 +81,13 @@ type Effect = (ctx: Ctx, p: Player, action: Use) => void;
 const EFFECTS: Record<ItemKind, Effect> = {
   boots: notUsable,
   compass: notUsable,
+  coin: notUsable,
+  hush: notUsable,
+  knucklebone(ctx, p) {
+    const extra = die(ctx.g, 6);
+    ctx.g.turn!.stepsLeft += extra;
+    emit(ctx, { type: 'used', player: p.id, kind: 'knucklebone' });
+  },
   tonic(ctx, p) {
     p.hp = maxHp(p);
     emit(ctx, { type: 'used', player: p.id, kind: 'tonic' });

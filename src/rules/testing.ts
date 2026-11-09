@@ -27,7 +27,7 @@ export function aGame({ players = 2, seed = 1, stats = [] }: GameOptions = {}): 
   // Rotate seats so that p1 always goes first in fixtures.
   g.seats = g.players.map((p) => p.id);
   for (let i = 0; i < players; i++) {
-    const want = stats[i] ?? { STR: 1, DEX: 1, INT: 1, WIS: 1, CON: 1, CHA: 1 };
+    const want = stats[i] ?? { STR: 3, CON: 3 };
     const full: Stats = { STR: 0, DEX: 0, INT: 0, WIS: 0, CON: 0, CHA: 0, ...want };
     g = act(g, `p${i + 1}`, { type: 'setStats', stats: full });
   }

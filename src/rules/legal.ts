@@ -1,5 +1,6 @@
 /** Every enumerable action a Player may take right now. */
-import { currentPlayer } from './context.ts';
+import { currentPlayer, findPlayer } from './context.ts';
+import { responseOptions } from './response.ts';
 import { clashOptions } from './clash.ts';
 import { errandOptions } from './errands.ts';
 import { itemOptions } from './items.ts';
@@ -10,6 +11,10 @@ export function legalActions(g: GameState, id: PlayerId): Action[] {
   const out: Action[] = [];
   if (g.phase === 'lobby' && id === g.hostId) out.push({ type: 'startGame' });
   if (g.phase !== 'playing' || !g.turn) return out;
+  if (g.response) {
+    const q = findPlayer(g, id);
+    return q ? responseOptions(g, q) : [];
+  }
   const p = currentPlayer(g);
   if (!p || p.id !== id) return out;
   if (g.clash) return [...clashOptions(g), ...itemOptions(g, p)];

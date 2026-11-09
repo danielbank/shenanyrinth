@@ -1,5 +1,6 @@
 /** Mobs, Ambushes and Clashes made of Exchanges. */
-import { emit, type Ctx } from './context.ts';
+import { emit, findPlayer, type Ctx } from './context.ts';
+import { onResolve, rollInPlay } from './response.ts';
 import {
   APPROACHES,
   APPROACH_STAT,
@@ -11,9 +12,17 @@ import {
 } from './data.ts';
 import { emptySquare } from './pickups.ts';
 import { sendHome } from './home.ts';
-import { die, shuffle } from './rng.ts';
+import { shuffle } from './rng.ts';
 import { stat } from './stats.ts';
-import type { Action, Approach, GameState, PathLevel, Player } from './types.ts';
+import type {
+  Action,
+  Approach,
+  DieInPlay,
+  GameState,
+  PathLevel,
+  Player,
+  RollSide,
+} from './types.ts';
 
 export function mobDef(kind: string): MobDef {
   return MOBS[kind]!;
@@ -41,7 +50,14 @@ export function ambush(ctx: Ctx, p: Player): void {
   turn.dexLeft = 0;
   turn.onFeature = false;
   turn.phase = 'after';
-  g.clash = { player: p.id, level: p.level, square: p.square, exchanges: 0, last: null };
+  g.clash = {
+    player: p.id,
+    level: p.level,
+    square: p.square,
+    exchanges: 0,
+    last: null,
+    approach: null,
+  };
   emit(ctx, { type: 'ambushed', player: p.id, level: p.level, square: p.square, mob: mob.kind });
 }
 
@@ -58,24 +74,36 @@ export function exchange(ctx: Ctx, p: Player, approach: Approach): void {
   const def = mobDef(mob.kind);
   const guardian = def.name === GUARDIAN.name;
   const bonus = stat(p, APPROACH_STAT[approach]) + (guardian ? stat(p, 'WIS') : 0);
-  const mine = die(g, 6);
-  const theirs = die(g, def.dice[approach]);
-  const dice = [
-    { id: 0, owner: p.id, faces: 6, value: mine },
-    { id: 1, owner: 'mob', faces: def.dice[approach], value: theirs },
+  clash.approach = approach;
+  clash.exchanges++;
+  const sides: [RollSide, RollSide] = [
+    { owner: p.id, bonus },
+    { owner: 'mob', bonus: 0 },
   ];
-  emit(ctx, {
+  const ctxEvents = ctx.events.length;
+  const dice = rollInPlay(ctx, 'clash', sides, [6, def.dice[approach]]);
+  // The dice go face-up before anything else that follows from them.
+  ctx.events.splice(ctxEvents, 0, {
     type: 'exchangeRolled',
     player: p.id,
     approach,
     mob: mob.kind,
-    dice,
+    dice: structuredClone(dice),
     bonus: [bonus, 0],
   });
-  clash.exchanges++;
-  const totals: [number, number] = [mine + bonus, theirs];
+}
+
+/** The Exchange's dice are final: the higher total lands a hit. */
+function finishExchange(ctx: Ctx, totals: [number, number], dice: DieInPlay[]): void {
+  const { g } = ctx;
+  const clash = g.clash!;
+  const p = findPlayer(g, clash.player)!;
+  const mob = g.boards[clash.level].mobs[clash.square]!;
+  const def = mobDef(mob.kind);
+  const guardian = def.name === GUARDIAN.name;
   const winner = totals[0] > totals[1] ? 'player' : totals[0] < totals[1] ? 'mob' : 'tie';
-  clash.last = { approach, dice, bonus: [bonus, 0], totals, winner };
+  const bonus = totals[0] - dice.filter((d) => d.owner === p.id).reduce((a, d) => a + d.value, 0);
+  clash.last = { approach: clash.approach!, dice, bonus: [bonus, 0], totals, winner };
   if (winner === 'player') mob.wounds++;
   if (winner === 'player' && guardian) {
     p.trophies += GUARDIAN_TROPHIES_PER_WOUND;
@@ -93,6 +121,8 @@ export function exchange(ctx: Ctx, p: Player, approach: Approach): void {
   if (mob.wounds >= def.wounds) kill(ctx, p, def);
   else if (p.hp <= 0) knockOut(ctx, p);
 }
+
+onResolve('clash', finishExchange);
 
 function kill(ctx: Ctx, p: Player, def: MobDef): void {
   const { g } = ctx;
@@ -138,7 +168,14 @@ export function resumeClash(ctx: Ctx, p: Player): void {
   const { g } = ctx;
   if (p.level === 'town') return;
   g.turn!.phase = 'after';
-  g.clash = { player: p.id, level: p.level, square: p.square, exchanges: 0, last: null };
+  g.clash = {
+    player: p.id,
+    level: p.level,
+    square: p.square,
+    exchanges: 0,
+    last: null,
+    approach: null,
+  };
 }
 
 export function moveAway(ctx: Ctx): void {

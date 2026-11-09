@@ -56,6 +56,9 @@ export function viewFor(state: GameState, viewer: PlayerId, events: GameEvent[] 
           items: mine.items.map((it) => ({ ...it })),
           slotsUsed: slotsUsed(mine),
           pivots: mine.pivots,
+          sway: mine.sway,
+          resist: mine.resist,
+          autoPass: mine.autoPass,
         }
       : null,
     seats: state.seats,
@@ -68,6 +71,7 @@ export function viewFor(state: GameState, viewer: PlayerId, events: GameEvent[] 
       dungeon: boardView(state.boards.dungeon, 'dungeon'),
     },
     clash: state.clash,
+    response: state.response,
     final:
       state.phase === 'over' ? { scores: state.players.map(score), winners: winners(state) } : null,
     options: legalActions(state, viewer),

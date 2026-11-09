@@ -2,7 +2,7 @@
 import { emit, findPlayer, type Ctx } from './context.ts';
 import { DOOM_TRACK, TOWN } from './data.ts';
 import { winners } from './score.ts';
-import { findItem } from './stats.ts';
+import { findItem, stat } from './stats.ts';
 import type { GameState } from './types.ts';
 
 export const PIVOT_LIMIT = 2;
@@ -16,6 +16,8 @@ export function startTurn(ctx: Ctx, seat: number): void {
   const { g } = ctx;
   const p = findPlayer(g, g.seats[seat]!)!;
   p.pivots = PIVOT_LIMIT + (findItem(p, 'boots') ? 1 : 0);
+  p.sway = stat(p, 'CHA');
+  p.resist = stat(p, 'CON');
   g.turn = {
     player: p.id,
     phase: 'prepare',
@@ -28,6 +30,7 @@ export function startTurn(ctx: Ctx, seat: number): void {
     passed: [],
     wander: false,
     stuck: false,
+    stepped: 0,
   };
   const building = p.level === 'town' ? TOWN.buildings[p.square] : undefined;
   if (building) g.turn.passed.push(building);

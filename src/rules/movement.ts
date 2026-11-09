@@ -76,6 +76,7 @@ export function step(ctx: Ctx, p: Player, dir: Dir): void {
   p.square = neighbour(levelSize(g, p.level), from, dir);
   if (turn.stepsLeft > 0) turn.stepsLeft--;
   else turn.dexLeft--;
+  turn.stepped++;
   emit(ctx, { type: 'stepped', player: p.id, level: p.level, from, to: p.square, dir });
   reveal(g, p);
   if (p.level === 'town') arriveInTown(ctx, p);

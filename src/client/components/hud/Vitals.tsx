@@ -1,4 +1,5 @@
 import type { PlayerView } from '../../../rules/index.ts';
+import { send } from '../../socket.ts';
 import styles from './Hud.module.css';
 
 export function Vitals({ view }: { view: PlayerView }) {
@@ -12,6 +13,17 @@ export function Vitals({ view }: { view: PlayerView }) {
       <span>↻ {view.me.pivots}</span>
       <span>Pack {view.me.pack.gold}g</span>
       <span>Keep {view.me.keep}g</span>
+      <span title="Sway / Resist">
+        ✦{view.me.sway} ⛨{view.me.resist}
+      </span>
+      <label>
+        <input
+          type="checkbox"
+          checked={view.me.autoPass}
+          onChange={(e) => send({ type: 'setAutoPass', on: e.target.checked })}
+        />{' '}
+        auto-pass
+      </label>
     </div>
   );
 }

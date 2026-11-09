@@ -188,6 +188,9 @@ export const POTIONS = {
 } as const;
 
 export const CHARMS = {
+  knucklebone: { name: 'Lucky Knucklebone', gold: 4 },
+  coin: { name: "Trickster's Coin", gold: 5 },
+  hush: { name: 'Hush Rune', gold: 5 },
   orb: { name: 'Orb of Foresight', gold: 3 },
   stones: { name: 'Shuffling Stones', gold: 4 },
 } as const;

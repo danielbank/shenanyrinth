@@ -108,6 +108,14 @@ describe('The client event queue', () => {
     expect(piecesShown(q).p1?.square).toBe(2);
   });
 
+  it('when a Response window opens, the queue jumps straight to the dice', () => {
+    let q = receive(createQueue(), aView(12, []));
+    const opened: GameEvent = { type: 'responseOpened', id: 1, dice: [], eligible: ['p1'] };
+    q = receive(q, aView(2, [stepped(12, 7), stepped(7, 2), opened]));
+    expect(q.playing).toEqual(opened);
+    expect(piecesShown(q).p1?.square).toBe(2);
+  });
+
   it('fast-forward with no matching event skips to the end', () => {
     let q = receive(createQueue(), aView(12, []));
     q = receive(q, aView(2, [stepped(12, 7)]));
