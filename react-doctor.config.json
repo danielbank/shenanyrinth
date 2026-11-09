@@ -1,0 +1,6 @@
+{
+  "ignore": {
+    "files": ["src/rules/**", "src/server/**", "scripts/**", "test/**", "*.config.ts"]
+  },
+  "supplyChain": { "enabled": false }
+}

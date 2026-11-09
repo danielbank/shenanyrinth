@@ -17,7 +17,7 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "doctor": "react-doctor src/client -y --scope full --blocking warning --no-score --no-supply-chain",
+    "doctor": "react-doctor . -y --scope full --blocking warning --no-score --no-supply-chain",
     "prepare": "husky"
   },
   "dependencies": {
