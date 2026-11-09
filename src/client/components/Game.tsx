@@ -6,6 +6,7 @@ import { Board } from './board/Board.tsx';
 import { LevelTabs } from './hud/LevelTabs.tsx';
 import { ClashPanel } from './ClashPanel.tsx';
 import { ResponseCard } from './ResponseCard.tsx';
+import { ShakedownPanel } from './ShakedownPanel.tsx';
 import { Errands } from './Errands.tsx';
 import { AimBanner, ItemBar, type Aim } from './ItemBar.tsx';
 import { picksNeeded } from '../itemNames.ts';
@@ -57,6 +58,7 @@ export function Game({ view }: { view: PlayerView }) {
       {queue.settled ? <Errands view={view} /> : null}
       {queue.settled && !view.response ? <ClashPanel view={view} /> : null}
       <ResponseCard view={view} />
+      {view.response ? null : <ShakedownPanel view={view} />}
       {view.final ? <FinalScores view={view} /> : null}
     </div>
   );

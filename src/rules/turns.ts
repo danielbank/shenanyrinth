@@ -17,6 +17,8 @@ export function startTurn(ctx: Ctx, seat: number): void {
   const p = findPlayer(g, g.seats[seat]!)!;
   p.pivots = PIVOT_LIMIT + (findItem(p, 'boots') ? 1 : 0);
   p.sway = stat(p, 'CHA');
+  p.shakeProtected = false;
+  p.stoneskin = false;
   p.resist = stat(p, 'CON');
   g.turn = {
     player: p.id,
@@ -31,6 +33,7 @@ export function startTurn(ctx: Ctx, seat: number): void {
     wander: false,
     stuck: false,
     stepped: 0,
+    shookDown: false,
   };
   const building = p.level === 'town' ? TOWN.buildings[p.square] : undefined;
   if (building) g.turn.passed.push(building);

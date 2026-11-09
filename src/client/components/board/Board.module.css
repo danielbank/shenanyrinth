@@ -50,6 +50,10 @@
   top: 0;
   z-index: 4;
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: max-content;
+  max-width: 280px;
   gap: 4px;
   transform: translate(-50%, -110%);
   white-space: nowrap;

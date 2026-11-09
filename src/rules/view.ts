@@ -72,6 +72,7 @@ export function viewFor(state: GameState, viewer: PlayerId, events: GameEvent[] 
     },
     clash: state.clash,
     response: state.response,
+    shakedown: state.shakedown,
     final:
       state.phase === 'over' ? { scores: state.players.map(score), winners: winners(state) } : null,
     options: legalActions(state, viewer),

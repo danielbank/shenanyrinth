@@ -13,6 +13,7 @@ import { exchange, moveAway, resumeClash, retreat } from './clash.ts';
 import { buy, deposit, train } from './errands.ts';
 import { acceptLost, useItem } from './items.ts';
 import { legalActions } from './legal.ts';
+import { defend, startShakedown } from './shakedown.ts';
 import { allow, closeResponse, meddle, pass, resist, sway, SYSTEM } from './response.ts';
 import {
   becomeLost,
@@ -123,6 +124,12 @@ function handle(ctx: Ctx, actor: PlayerId, action: Action): void {
     }
     case 'acceptLost':
       return acceptLost(ctx, me(g), becomeLost);
+    case 'shakedown':
+      return startShakedown(ctx, me(g), action.target, action.approach, false);
+    case 'ram':
+      return startShakedown(ctx, me(g), action.target, action.approach, true);
+    case 'defend':
+      return defend(ctx, action.approach);
     case 'endTurn':
       return endTurn(ctx);
   }
@@ -161,6 +168,9 @@ function join(ctx: Ctx, actor: PlayerId, action: Extract<Action, { type: 'join' 
     sway: 0,
     resist: 0,
     autoPass: false,
+    shakedownWins: 0,
+    shakeProtected: false,
+    stoneskin: false,
   });
   g.hostId ??= actor;
   emit(ctx, { type: 'joined', player: actor });

@@ -103,6 +103,20 @@ function button(view: PlayerView, action: Action) {
           Accept being Lost
         </button>,
       ];
+    case 'shakedown':
+    case 'ram': {
+      const target = view.players.find((p) => p.id === action.target)?.name ?? 'them';
+      const verb = action.type === 'ram' ? 'Ram' : 'Shake down';
+      return [
+        <button
+          key={`${action.type}-${action.target}-${action.approach}`}
+          type="button"
+          onClick={go}
+        >
+          {verb} {target}: {action.approach}
+        </button>,
+      ];
+    }
     case 'endTurn':
       return [
         <button key="end" type="button" onClick={go}>

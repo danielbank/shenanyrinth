@@ -45,6 +45,21 @@ export interface Player {
   sway: number;
   resist: number;
   autoPass: boolean;
+  /** Shakedowns won, for the Shakedown Artist Deed. */
+  shakedownWins: number;
+  /** Just Shaken down: safe from Shakedowns until their next Turn. */
+  shakeProtected: boolean;
+  /** Stoneskin Salve: immune to Shakedowns and Rams until their next Turn. */
+  stoneskin: boolean;
+}
+
+export interface Shakedown {
+  attacker: PlayerId;
+  defender: PlayerId;
+  approach: Approach;
+  /** The defender's Approach, once chosen. */
+  defence: Approach | null;
+  ram: boolean;
 }
 
 /** A fixed thing on a square; it stays put when Tiles are swapped. */
@@ -86,7 +101,8 @@ export type ItemKind =
   | 'stones'
   | 'knucklebone'
   | 'coin'
-  | 'hush';
+  | 'hush'
+  | 'stoneskin';
 
 export interface Item {
   id: number;
@@ -180,6 +196,8 @@ export interface Turn {
   stuck: boolean;
   /** Steps taken this Turn. */
   stepped: number;
+  /** A Shakedown or Ram has already happened this Turn. */
+  shookDown: boolean;
 }
 
 export interface GameState {
@@ -196,6 +214,7 @@ export interface GameState {
   boards: Record<PathLevel, Board>;
   clash: Clash | null;
   response: ResponseWindow | null;
+  shakedown: Shakedown | null;
   nextResponseId: number;
   nextItemId: number;
   /** The feat was performed: the game ends after this Round. */
@@ -236,6 +255,9 @@ export type Action =
   | { type: 'closeResponse'; id: number }
   | { type: 'setAutoPass'; on: boolean }
   | { type: 'acceptLost' }
+  | { type: 'shakedown'; target: PlayerId; approach: Approach }
+  | { type: 'ram'; target: PlayerId; approach: Approach }
+  | { type: 'defend'; approach: Approach }
   | { type: 'exchange'; approach: Approach }
   | { type: 'retreat' }
   | { type: 'resumeClash' }
@@ -293,6 +315,21 @@ export type GameEvent = Base &
     | { type: 'diceChanged'; dice: DieInPlay[] }
     | { type: 'passed'; player: PlayerId }
     | { type: 'responseClosed'; id: number }
+    | {
+        type: 'shakedownStarted';
+        attacker: PlayerId;
+        defender: PlayerId;
+        approach: Approach;
+        ram: boolean;
+      }
+    | {
+        type: 'shakedownRolled';
+        attacker: PlayerId;
+        defender: PlayerId;
+        dice: DieInPlay[];
+        bonus: [number, number];
+      }
+    | { type: 'shakedownResolved'; winner: PlayerId | null; loser: PlayerId | null; taken: Pack }
     | { type: 'healed'; player: PlayerId; hp: number }
     | { type: 'ambushed'; player: PlayerId; level: PathLevel; square: number; mob: string }
     | {
@@ -417,6 +454,7 @@ export interface PlayerView {
   boards: Record<PathLevel, BoardView>;
   clash: Clash | null;
   response: ResponseWindow | null;
+  shakedown: Shakedown | null;
   final: { scores: Score[]; winners: PlayerId[] } | null;
   options: Action[];
   /** Carried items the Player may use now that need a target square. */

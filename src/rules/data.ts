@@ -185,7 +185,11 @@ export const POTIONS = {
   draught: { name: 'Draught of Wandering', gold: 4 },
   teleport: { name: 'Scroll of Teleportation', gold: 6 },
   twirlwater: { name: 'Twirlwater', gold: 3 },
+  stoneskin: { name: 'Stoneskin Salve', gold: 2 },
 } as const;
+
+/** What the winner of a Shakedown takes: up to this much Gold, or 1 Material. */
+export const SHAKEDOWN_GOLD = 3;
 
 export const CHARMS = {
   knucklebone: { name: 'Lucky Knucklebone', gold: 4 },

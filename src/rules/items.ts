@@ -28,6 +28,8 @@ function usableNow(g: GameState, p: Player, kind: ItemKind): boolean {
       return turn.phase === 'prepare';
     case 'twirlwater':
       return turn.phase === 'prepare' || turn.phase === 'move';
+    case 'stoneskin':
+      return (turn.phase === 'prepare' || turn.phase === 'after') && !p.stoneskin;
     case 'knucklebone':
       // Any roll of yours: the movement roll, before the first step.
       return turn.phase === 'move' && turn.stepped === 0;
@@ -40,7 +42,7 @@ function usableNow(g: GameState, p: Player, kind: ItemKind): boolean {
 }
 
 /** Items that need no target, offered as ready-made actions. */
-const NO_TARGET = new Set<ItemKind>(['tonic', 'draught', 'twirlwater', 'knucklebone']);
+const NO_TARGET = new Set<ItemKind>(['tonic', 'draught', 'twirlwater', 'knucklebone', 'stoneskin']);
 
 export function itemOptions(g: GameState, p: Player): Action[] {
   if (g.turn!.stuck) {
@@ -83,6 +85,10 @@ const EFFECTS: Record<ItemKind, Effect> = {
   compass: notUsable,
   coin: notUsable,
   hush: notUsable,
+  stoneskin(ctx, p) {
+    p.stoneskin = true;
+    emit(ctx, { type: 'used', player: p.id, kind: 'stoneskin' });
+  },
   knucklebone(ctx, p) {
     const extra = die(ctx.g, 6);
     ctx.g.turn!.stepsLeft += extra;

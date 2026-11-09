@@ -1,6 +1,7 @@
 /** Every enumerable action a Player may take right now. */
 import { currentPlayer, findPlayer } from './context.ts';
 import { responseOptions } from './response.ts';
+import { defenceOptions, ramOptions, shakedownOptions } from './shakedown.ts';
 import { clashOptions } from './clash.ts';
 import { errandOptions } from './errands.ts';
 import { itemOptions } from './items.ts';
@@ -15,6 +16,7 @@ export function legalActions(g: GameState, id: PlayerId): Action[] {
     const q = findPlayer(g, id);
     return q ? responseOptions(g, q) : [];
   }
+  if (g.shakedown) return defenceOptions(g, id);
   const p = currentPlayer(g);
   if (!p || p.id !== id) return out;
   if (g.clash) return [...clashOptions(g), ...itemOptions(g, p)];
@@ -34,6 +36,7 @@ export function legalActions(g: GameState, id: PlayerId): Action[] {
       out.push(...stepOptions(g, p));
       if (turn.free || (turn.stepsLeft === 0 && turn.dexLeft > 0)) out.push({ type: 'stop' });
       if (turn.onFeature) out.push({ type: 'takeFeature' });
+      out.push(...ramOptions(g, p));
       break;
     }
     case 'after':
@@ -42,6 +45,7 @@ export function legalActions(g: GameState, id: PlayerId): Action[] {
         break;
       }
       if (g.turn.onFeature) out.push({ type: 'takeFeature' });
+      out.push(...shakedownOptions(g, p));
       out.push(...itemOptions(g, p));
       out.push(...errandOptions(g, p));
       out.push({ type: 'endTurn' });
