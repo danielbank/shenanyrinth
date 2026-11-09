@@ -20,6 +20,7 @@ export function newGame({ seed }: { seed: number }): GameState {
     response: null,
     shakedown: null,
     discarding: null,
+    deeds: [],
     nextResponseId: 1,
     nextItemId: 1,
     endTriggered: false,

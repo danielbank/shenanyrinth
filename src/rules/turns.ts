@@ -45,6 +45,8 @@ export function startTurn(ctx: Ctx, seat: number): void {
 export function endTurn(ctx: Ctx): void {
   const { g } = ctx;
   const turn = g.turn!;
+  const p = findPlayer(g, turn.player)!;
+  p.dungeonStreak = p.level === 'dungeon' ? p.dungeonStreak + 1 : 0;
   emit(ctx, { type: 'turnEnded', player: turn.player });
   const seat = g.seats.indexOf(turn.player);
   if (seat === g.seats.length - 1) {

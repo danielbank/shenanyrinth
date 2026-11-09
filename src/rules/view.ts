@@ -8,7 +8,7 @@ import { legalActions } from './legal.ts';
 import { moveOutlines } from './movement.ts';
 import { publicScore, score, winners } from './score.ts';
 import { maxHp, slotsUsed, stat } from './stats.ts';
-import { STATS } from './data.ts';
+import { DEEDS, STATS } from './data.ts';
 import { doomLimit } from './turns.ts';
 import type {
   Board,
@@ -47,7 +47,7 @@ export function viewFor(state: GameState, viewer: PlayerId, events: GameEvent[] 
       maxHp: maxHp(p),
       stats: Object.fromEntries(STATS.map((s) => [s, stat(p, s)])) as Stats,
       trinkets: [...p.trinkets],
-      publicScore: publicScore(p),
+      publicScore: publicScore(state, p),
     })),
     me: mine
       ? {
@@ -76,8 +76,14 @@ export function viewFor(state: GameState, viewer: PlayerId, events: GameEvent[] 
     clash: state.clash,
     response: state.response,
     shakedown: state.shakedown,
+    deeds: state.deeds.map((d) => ({
+      ...DEEDS.find((x) => x.id === d.id)!,
+      claimedBy: d.claimedBy,
+    })),
     final:
-      state.phase === 'over' ? { scores: state.players.map(score), winners: winners(state) } : null,
+      state.phase === 'over'
+        ? { scores: state.players.map((p) => score(state, p)), winners: winners(state) }
+        : null,
     options: legalActions(state, viewer),
     aimable: mine ? targetedItems(state, mine) : [],
     offers:

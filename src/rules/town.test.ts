@@ -140,6 +140,7 @@ describe('Rounds and the Doom Track', () => {
   it('the final scores count Keep Gold', () => {
     let g = aGame({ players: 2 });
     g.players[0]!.keep = 7;
+    g.deeds = [];
     g.round = 30;
     g = endTurns(g, 2);
     const final = viewFor(g, 'p2').final;

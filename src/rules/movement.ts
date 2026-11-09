@@ -148,6 +148,8 @@ export function takeFeature(ctx: Ctx, p: Player): void {
   turn.onFeature = false;
   turn.choosingHeading = to.level !== 'town';
   emit(ctx, { type: 'travelled', player: p.id, from, to });
+  if (to.level === 'dungeon') p.reachedDungeon = true;
+  if (to.level === 'town' && p.pack.artifacts >= 2) p.relic = true;
   reveal(g, p);
   if (p.level !== 'town') collect(ctx, p);
 }

@@ -12,6 +12,7 @@ import { RuleError } from './errors.ts';
 import { exchange, moveAway, resumeClash, retreat } from './clash.ts';
 import { buy, deposit, train } from './errands.ts';
 import { acceptLost, useItem } from './items.ts';
+import { checkDeeds, drawDeeds } from './deeds.ts';
 import { legalActions } from './legal.ts';
 import { discard } from './loot.ts';
 import { defend, startShakedown } from './shakedown.ts';
@@ -48,6 +49,7 @@ export function applyAction(state: GameState, actor: PlayerId, action: Action): 
       throw new RuleError(refusal(state, actor, action));
   }
   handle(ctx, actor, action);
+  checkDeeds(ctx);
   return { state: ctx.g, events: ctx.events };
 }
 
@@ -175,6 +177,12 @@ function join(ctx: Ctx, actor: PlayerId, action: Extract<Action, { type: 'join' 
     shakedownWins: 0,
     trinkets: [],
     cachesClaimed: [],
+    kills: 0,
+    dungeonKills: 0,
+    guardianWounds: 0,
+    reachedDungeon: false,
+    relic: false,
+    dungeonStreak: 0,
     shakeProtected: false,
     stoneskin: false,
   });
@@ -188,6 +196,7 @@ function startGame(ctx: Ctx): void {
   const first = shuffle(g, [...ids.keys()])[0] ?? 0;
   g.seats = [...ids.slice(first), ...ids.slice(0, first)];
   g.phase = 'setup';
+  drawDeeds(g);
   emit(ctx, { type: 'gameStarted', seats: g.seats });
 }
 

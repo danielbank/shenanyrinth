@@ -49,6 +49,14 @@ export interface Player {
   trinkets: Trinket[];
   /** Ratings of the Caches claimed, in order. */
   cachesClaimed: number[];
+  kills: number;
+  dungeonKills: number;
+  guardianWounds: number;
+  reachedDungeon: boolean;
+  /** Carried 2 or more Artifacts into the Town at once. */
+  relic: boolean;
+  /** Turns in a row ended in the Dungeon. */
+  dungeonStreak: number;
   /** Shakedowns won, for the Shakedown Artist Deed. */
   shakedownWins: number;
   /** Just Shaken down: safe from Shakedowns until their next Turn. */
@@ -226,6 +234,8 @@ export interface GameState {
   clash: Clash | null;
   response: ResponseWindow | null;
   shakedown: Shakedown | null;
+  /** The three public Deeds of this game, one per tier. */
+  deeds: { id: string; claimedBy: PlayerId | null }[];
   /** A Player over 5 Slots must discard before play goes on. */
   discarding: PlayerId | null;
   nextResponseId: number;
@@ -347,6 +357,7 @@ export type GameEvent = Base &
     | { type: 'trinketFound'; player: PlayerId; trinket: Trinket }
     | { type: 'cacheClaimed'; player: PlayerId; rating: number }
     | { type: 'discarded'; player: PlayerId }
+    | { type: 'deedClaimed'; player: PlayerId; deed: string; points: number }
     | { type: 'shakedownResolved'; winner: PlayerId | null; loser: PlayerId | null; taken: Pack }
     | { type: 'healed'; player: PlayerId; hp: number }
     | { type: 'ambushed'; player: PlayerId; level: PathLevel; square: number; mob: string }
@@ -381,7 +392,19 @@ export interface Score {
   player: PlayerId;
   keep: number;
   pack: number;
+  trophies: number;
+  deeds: number;
+  trinkets: number;
   total: number;
+}
+
+export interface DeedView {
+  id: string;
+  tier: 'easy' | 'medium' | 'hard';
+  name: string;
+  text: string;
+  points: number;
+  claimedBy: PlayerId | null;
 }
 
 export interface PublicPlayer {
@@ -474,6 +497,7 @@ export interface PlayerView {
   clash: Clash | null;
   response: ResponseWindow | null;
   shakedown: Shakedown | null;
+  deeds: DeedView[];
   final: { scores: Score[]; winners: PlayerId[] } | null;
   options: Action[];
   /** Carried items the Player may use now that need a target square. */

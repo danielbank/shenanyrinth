@@ -109,6 +109,7 @@ function finishExchange(ctx: Ctx, totals: [number, number], dice: DieInPlay[]): 
   if (winner === 'player') mob.wounds++;
   if (winner === 'player' && guardian) {
     p.trophies += GUARDIAN_TROPHIES_PER_WOUND;
+    p.guardianWounds++;
     emit(ctx, { type: 'guardianWounded', player: p.id, trophies: GUARDIAN_TROPHIES_PER_WOUND });
     dropLoot(ctx, p);
   }
@@ -134,6 +135,8 @@ function kill(ctx: Ctx, p: Player, def: MobDef): void {
   delete board.mobs[clash.square];
   p.trophies += def.trophy;
   p.pack.gold += def.gold;
+  p.kills++;
+  if (clash.level === 'dungeon') p.dungeonKills++;
   g.clash = null;
   emit(ctx, {
     type: 'mobKilled',

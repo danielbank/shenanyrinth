@@ -5,6 +5,7 @@ import { useGame } from '../useGame.ts';
 import { Board } from './board/Board.tsx';
 import { LevelTabs } from './hud/LevelTabs.tsx';
 import { ClashPanel } from './ClashPanel.tsx';
+import { DeedsDrawer } from './DeedsDrawer.tsx';
 import { DiscardPanel } from './DiscardPanel.tsx';
 import { ResponseCard } from './ResponseCard.tsx';
 import { ShakedownPanel } from './ShakedownPanel.tsx';
@@ -24,6 +25,7 @@ export function Game({ view }: { view: PlayerView }) {
   const myLevel = (view.you && queue.shown[view.you]?.level) || 'town';
   const level = peek ?? myLevel;
   const [aim, setAim] = useState<Aim | null>(null);
+  const [drawer, setDrawer] = useState<'deeds' | null>(null);
   const pick = (square: number) =>
     setAim((a) => (a ? { ...a, picks: [...a.picks, square].slice(-picksNeeded(a.item.kind)) } : a));
   return (
@@ -54,7 +56,11 @@ export function Game({ view }: { view: PlayerView }) {
       </div>
       <div className={styles.bottomRight}>
         <ItemBar view={view} onAim={setAim} />
+        <button type="button" onClick={() => setDrawer('deeds')}>
+          📜 Deeds {view.deeds.filter((d) => !d.claimedBy).length}/3
+        </button>
       </div>
+      {drawer === 'deeds' ? <DeedsDrawer view={view} onClose={() => setDrawer(null)} /> : null}
       {aim ? <AimBanner aim={aim} onDone={() => setAim(null)} /> : null}
       {queue.settled ? <Errands view={view} /> : null}
       {queue.settled && !view.response ? <ClashPanel view={view} /> : null}

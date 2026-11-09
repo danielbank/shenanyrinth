@@ -18,6 +18,9 @@ export function FinalScores({ view }: { view: PlayerView }) {
               <th>Player</th>
               <th>Keep</th>
               <th>Pack ½</th>
+              <th>Trophies</th>
+              <th>Deeds</th>
+              <th>Trinkets</th>
               <th>Total</th>
             </tr>
           </thead>
@@ -27,6 +30,9 @@ export function FinalScores({ view }: { view: PlayerView }) {
                 <td>{name(s.player)}</td>
                 <td>{s.keep}</td>
                 <td>{s.pack}</td>
+                <td>{s.trophies}</td>
+                <td>{s.deeds}</td>
+                <td>{s.trinkets}</td>
                 <td>{s.total}</td>
               </tr>
             ))}

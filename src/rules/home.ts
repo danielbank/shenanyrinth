@@ -32,6 +32,8 @@ export function sendHome(ctx: Ctx, p: Player): void {
   p.level = 'town';
   p.square = TOWN.keepHall;
   p.hp = maxHp(p);
+  p.dungeonStreak = 0;
+  if (p.pack.artifacts >= 2) p.relic = true;
   emit(ctx, { type: 'sentHome', player: p.id });
   endTurn(ctx);
 }

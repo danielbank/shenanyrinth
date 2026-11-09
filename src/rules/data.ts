@@ -219,3 +219,41 @@ export const CACHES = {
   forest: { count: 2, min: 2, max: 3, gold: 3, material: 'herbs' },
   dungeon: { count: 2, min: 3, max: 5, gold: 5, material: 'artifacts' },
 } as const;
+
+export type DeedTier = 'easy' | 'medium' | 'hard';
+
+export interface DeedDef {
+  id: string;
+  tier: DeedTier;
+  name: string;
+  text: string;
+  points: number;
+}
+
+const deed = (id: string, tier: DeedTier, name: string, text: string): DeedDef => ({
+  id,
+  tier,
+  name,
+  text,
+  points: { easy: 3, medium: 4, hard: 5 }[tier],
+});
+
+export const DEEDS: DeedDef[] = [
+  deed('trailblazer', 'easy', 'Trailblazer', 'reach the Dungeon'),
+  deed('hunter', 'easy', 'Monster Hunter', 'kill 3 Mobs'),
+  deed('nestegg', 'easy', 'Nest Egg', 'have 6 Gold Deposited'),
+  deed('artist', 'easy', 'Shakedown Artist', 'win a Shakedown'),
+  deed('relic', 'medium', 'Relic Hunter', 'carry 2 Artifacts into the Town at once'),
+  deed('sense', 'medium', 'Treasure Sense', 'claim any Cache'),
+  deed('collector', 'medium', 'Collector', 'own 1 Trinket'),
+  deed('firstblood', 'medium', 'First Blood', 'land a Wound on the Guardian'),
+  deed(
+    'pathfinder',
+    'hard',
+    'Pathfinder',
+    'end 5 Turns in a row in the Dungeon without being Lost or Knocked Out',
+  ),
+  deed('deep', 'hard', 'Deep Secrets', 'claim a Cache rated 3 or higher'),
+  deed('master', 'hard', 'Master-at-Arms', 'wield a tier-2 Gear'),
+  deed('slayer', 'hard', 'Dungeon Slayer', 'kill 3 Dungeon Mobs'),
+];
