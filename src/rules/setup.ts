@@ -19,6 +19,7 @@ export function newGame({ seed }: { seed: number }): GameState {
     clash: null,
     response: null,
     shakedown: null,
+    discarding: null,
     nextResponseId: 1,
     nextItemId: 1,
     endTriggered: false,
@@ -30,7 +31,7 @@ export function newGame({ seed }: { seed: number }): GameState {
   const dungeon = g.boards.dungeon;
   for (const [square, f] of Object.entries(dungeon.features)) {
     if (f.type === 'guardian') dungeon.mobs[Number(square)] = { kind: GUARDIAN.name, wounds: 0 };
-    if (f.type === 'stairsUp') revealArea(g, 'dungeon', Number(square), 1);
+    if (f.type === 'stairsUp') revealArea(g, 'dungeon', Number(square), 1, true);
   }
   seedMobs(g, 'dungeon', DUNGEON_MOBS);
   seedTokens(g, 'dungeon');

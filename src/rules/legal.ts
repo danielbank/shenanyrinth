@@ -5,6 +5,7 @@ import { defenceOptions, ramOptions, shakedownOptions } from './shakedown.ts';
 import { clashOptions } from './clash.ts';
 import { errandOptions } from './errands.ts';
 import { itemOptions } from './items.ts';
+import { discardOptions } from './loot.ts';
 import { compassOptions, headingOptions, stepOptions } from './movement.ts';
 import type { Action, GameState, PlayerId } from './types.ts';
 
@@ -17,6 +18,10 @@ export function legalActions(g: GameState, id: PlayerId): Action[] {
     return q ? responseOptions(g, q) : [];
   }
   if (g.shakedown) return defenceOptions(g, id);
+  if (g.discarding) {
+    const q = findPlayer(g, id);
+    return q && g.discarding === id ? discardOptions(g, q) : [];
+  }
   const p = currentPlayer(g);
   if (!p || p.id !== id) return out;
   if (g.clash) return [...clashOptions(g), ...itemOptions(g, p)];

@@ -1,11 +1,12 @@
 /** Every type in the rules engine. Vocabulary follows GLOSSARY.md. */
-import type { ApproachName, COLOURS, HEROES, STATS } from './data.ts';
+import type { ApproachName, COLOURS, HEROES, STATS, TRINKETS } from './data.ts';
 
 export type PlayerId = string;
 export type Hero = (typeof HEROES)[number];
 export type Colour = (typeof COLOURS)[number];
 export type Stat = (typeof STATS)[number];
 export type Stats = Record<Stat, number>;
+export type Trinket = (typeof TRINKETS)[number];
 
 export type Dir = 'N' | 'E' | 'S' | 'W';
 export type LevelName = 'town' | 'forest' | 'dungeon';
@@ -45,6 +46,9 @@ export interface Player {
   sway: number;
   resist: number;
   autoPass: boolean;
+  trinkets: Trinket[];
+  /** Ratings of the Caches claimed, in order. */
+  cachesClaimed: number[];
   /** Shakedowns won, for the Shakedown Artist Deed. */
   shakedownWins: number;
   /** Just Shaken down: safe from Shakedowns until their next Turn. */
@@ -66,7 +70,12 @@ export interface Shakedown {
 export type Feature =
   { type: 'gate'; side: Dir } | { type: 'stairs' } | { type: 'stairsUp' } | { type: 'guardian' };
 
-export type Token = { type: 'gold'; amount: number } | { type: 'herbs' } | { type: 'artifacts' };
+export type Token =
+  | { type: 'gold'; amount: number }
+  | { type: 'herbs' }
+  | { type: 'artifacts' }
+  /** Visible to and claimable only by Players whose INT is at least its rating. */
+  | { type: 'cache'; rating: number };
 
 export type Approach = ApproachName;
 
@@ -79,8 +88,10 @@ export interface Board {
   size: number;
   /** Each square's Exits, in N E S W order, e.g. 'NS'. */
   tiles: string[];
-  /** Squares revealed by Torchlight, permanently and for everyone. */
+  /** Squares revealed, permanently and for everyone. */
   revealed: boolean[];
+  /** Squares Torchlight has reached; only these show Caches. */
+  lit: boolean[];
   features: Record<number, Feature>;
   tokens: Record<number, Token>;
   mobs: Record<number, MobState>;
@@ -215,6 +226,8 @@ export interface GameState {
   clash: Clash | null;
   response: ResponseWindow | null;
   shakedown: Shakedown | null;
+  /** A Player over 5 Slots must discard before play goes on. */
+  discarding: PlayerId | null;
   nextResponseId: number;
   nextItemId: number;
   /** The feat was performed: the game ends after this Round. */
@@ -258,6 +271,7 @@ export type Action =
   | { type: 'shakedown'; target: PlayerId; approach: Approach }
   | { type: 'ram'; target: PlayerId; approach: Approach }
   | { type: 'defend'; approach: Approach }
+  | { type: 'discard'; item?: number; gear?: Stat }
   | { type: 'exchange'; approach: Approach }
   | { type: 'retreat' }
   | { type: 'resumeClash' }
@@ -329,6 +343,10 @@ export type GameEvent = Base &
         dice: DieInPlay[];
         bonus: [number, number];
       }
+    | { type: 'looted'; player: PlayerId; loot: string }
+    | { type: 'trinketFound'; player: PlayerId; trinket: Trinket }
+    | { type: 'cacheClaimed'; player: PlayerId; rating: number }
+    | { type: 'discarded'; player: PlayerId }
     | { type: 'shakedownResolved'; winner: PlayerId | null; loser: PlayerId | null; taken: Pack }
     | { type: 'healed'; player: PlayerId; hp: number }
     | { type: 'ambushed'; player: PlayerId; level: PathLevel; square: number; mob: string }
@@ -380,6 +398,7 @@ export interface PublicPlayer {
   hp: number;
   maxHp: number;
   stats: Stats;
+  trinkets: Trinket[];
   publicScore: number;
 }
 

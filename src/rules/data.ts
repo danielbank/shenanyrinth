@@ -200,3 +200,22 @@ export const CHARMS = {
 } as const;
 
 export const CHARM_CHARGES = 3;
+
+export const TRINKETS = [
+  'Glove of Slapping',
+  'Ring of Reflection',
+  'Trombone of Sorrow',
+  'Sack of Flatulence',
+  'Kazoo of Triumph',
+  'Rubber Chicken',
+  'Lute of the Bard',
+  'Party Popper',
+] as const;
+
+/** The d6 roll a Loot drop needs. */
+export const LOOT_NEEDS = { forestKill: 6, dungeonKill: 4, cache: 3 } as const;
+
+export const CACHES = {
+  forest: { count: 2, min: 2, max: 3, gold: 3, material: 'herbs' },
+  dungeon: { count: 2, min: 3, max: 5, gold: 5, material: 'artifacts' },
+} as const;

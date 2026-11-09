@@ -7,12 +7,14 @@ import {
   GUARDIAN,
   GUARDIAN_BONUS,
   GUARDIAN_TROPHIES_PER_WOUND,
+  LOOT_NEEDS,
   MOBS,
   type MobDef,
 } from './data.ts';
 import { emptySquare } from './pickups.ts';
 import { sendHome } from './home.ts';
-import { shuffle } from './rng.ts';
+import { die, shuffle } from './rng.ts';
+import { dropLoot } from './loot.ts';
 import { stat } from './stats.ts';
 import type {
   Action,
@@ -108,6 +110,7 @@ function finishExchange(ctx: Ctx, totals: [number, number], dice: DieInPlay[]): 
   if (winner === 'player' && guardian) {
     p.trophies += GUARDIAN_TROPHIES_PER_WOUND;
     emit(ctx, { type: 'guardianWounded', player: p.id, trophies: GUARDIAN_TROPHIES_PER_WOUND });
+    dropLoot(ctx, p);
   }
   if (winner === 'mob') p.hp = Math.max(0, p.hp - def.damage);
   emit(ctx, {
@@ -139,6 +142,8 @@ function kill(ctx: Ctx, p: Player, def: MobDef): void {
     trophies: def.trophy,
     gold: def.gold,
   });
+  const needs = clash.level === 'forest' ? LOOT_NEEDS.forestKill : LOOT_NEEDS.dungeonKill;
+  if (def.name !== GUARDIAN.name && die(g, 6) >= needs) dropLoot(ctx, p);
   if (def.name === GUARDIAN.name) {
     // The feat: the Guardian bonus goes straight into the Keep, and the end is triggered.
     p.keep += GUARDIAN_BONUS;

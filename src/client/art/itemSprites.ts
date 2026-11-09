@@ -74,3 +74,21 @@ export const PILE: Sprite = {
   ],
   palette: { o, b: '#a0703a', y: '#f2c14e' },
 };
+
+export const CHEST: Sprite = {
+  rows: [
+    '............',
+    '..oooooooo..',
+    '.obbbbbbbbo.',
+    '.obbbbbbbbo.',
+    'oooooyyooooo',
+    'obbbbyybbbbo',
+    'obbbbbbbbbbo',
+    'obbbbbbbbbbo',
+    'obbbbbbbbbbo',
+    'oooooooooooo',
+    '............',
+    '............',
+  ],
+  palette: { o, b: '#8a5a2a', y: '#f2c14e' },
+};

@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import type { Dir, PathLevel, SquareView } from '../../../rules/index.ts';
-import { ARTIFACT, COIN, HERB, PILE } from '../../art/itemSprites.ts';
+import { ARTIFACT, CHEST, COIN, HERB, PILE } from '../../art/itemSprites.ts';
 import { MOB_SPRITES } from '../../art/mobSprites.ts';
 import { GATE_SPRITE, STAIRS_DOWN_SPRITE, STAIRS_UP_SPRITE } from '../../art/townSprites.ts';
 import { PixelArt } from '../PixelArt.tsx';
@@ -65,6 +65,9 @@ function Contents({ square, tile }: { square: SquareView; tile: number }) {
       {token?.type === 'herbs' ? <PixelArt sprite={HERB} size={size} label="Herbs" /> : null}
       {token?.type === 'artifacts' ? (
         <PixelArt sprite={ARTIFACT} size={size} label="Artifact" />
+      ) : null}
+      {token?.type === 'cache' ? (
+        <PixelArt sprite={CHEST} size={size} label={`A Cache, rated ${token.rating}`} />
       ) : null}
       {square.pile ? <PixelArt sprite={PILE} size={size} label="A dropped pile" /> : null}
       {square.mob ? (

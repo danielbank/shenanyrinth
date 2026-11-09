@@ -13,6 +13,7 @@ import { exchange, moveAway, resumeClash, retreat } from './clash.ts';
 import { buy, deposit, train } from './errands.ts';
 import { acceptLost, useItem } from './items.ts';
 import { legalActions } from './legal.ts';
+import { discard } from './loot.ts';
 import { defend, startShakedown } from './shakedown.ts';
 import { allow, closeResponse, meddle, pass, resist, sway, SYSTEM } from './response.ts';
 import {
@@ -30,6 +31,7 @@ import type { Action, ActionResult, GameState, Player, PlayerId, Stats } from '.
 
 /** Actions whose parameters are free-form, so they are checked by hand instead of against the legal list. */
 const FREE_FORM = new Set<Action['type']>([
+  'discard',
   'join',
   'setStats',
   'use',
@@ -130,6 +132,8 @@ function handle(ctx: Ctx, actor: PlayerId, action: Action): void {
       return startShakedown(ctx, me(g), action.target, action.approach, true);
     case 'defend':
       return defend(ctx, action.approach);
+    case 'discard':
+      return discard(ctx, findPlayer(g, actor)!, action);
     case 'endTurn':
       return endTurn(ctx);
   }
@@ -169,6 +173,8 @@ function join(ctx: Ctx, actor: PlayerId, action: Extract<Action, { type: 'join' 
     resist: 0,
     autoPass: false,
     shakedownWins: 0,
+    trinkets: [],
+    cachesClaimed: [],
     shakeProtected: false,
     stoneskin: false,
   });

@@ -10,10 +10,17 @@ export function torchRadius(p: Player): number {
 
 export function reveal(g: GameState, p: Player): void {
   if (p.level === 'town') return;
-  revealArea(g, p.level, p.square, torchRadius(p));
+  revealArea(g, p.level, p.square, torchRadius(p), true);
 }
 
-export function revealArea(g: GameState, level: PathLevel, square: number, r: number): void {
+/** Reveal the squares within r of a square; Torchlight (`lit`) also shows Caches there. */
+export function revealArea(
+  g: GameState,
+  level: PathLevel,
+  square: number,
+  r: number,
+  lit: boolean,
+): void {
   const board = g.boards[level];
   const n = board.size;
   const x0 = square % n;
@@ -21,6 +28,7 @@ export function revealArea(g: GameState, level: PathLevel, square: number, r: nu
   for (let y = Math.max(0, y0 - r); y <= Math.min(n - 1, y0 + r); y++) {
     for (let x = Math.max(0, x0 - r); x <= Math.min(n - 1, x0 + r); x++) {
       board.revealed[y * n + x] = true;
+      if (lit) board.lit[y * n + x] = true;
     }
   }
 }

@@ -2,12 +2,17 @@ import type { GameState, Player, PlayerId, Score } from './types.ts';
 
 export function score(p: Player): Score {
   const pack = Math.floor(p.pack.gold / 2);
-  return { player: p.id, keep: p.keep, pack, total: p.keep + pack + p.trophies };
+  return {
+    player: p.id,
+    keep: p.keep,
+    pack,
+    total: p.keep + pack + p.trophies + p.trinkets.length,
+  };
 }
 
 /** The score everyone can see: it leaves out Pack Gold. */
 export function publicScore(p: Player): number {
-  return p.keep + p.trophies;
+  return p.keep + p.trophies + p.trinkets.length;
 }
 
 /** Most points; ties go to most Trophies, then the feat; if still tied, they share the win. */

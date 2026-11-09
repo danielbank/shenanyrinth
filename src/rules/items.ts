@@ -132,7 +132,7 @@ const EFFECTS: Record<ItemKind, Effect> = {
     if (square === undefined || !Number.isInteger(square) || !board.tiles[square]) {
       throw new RuleError('Choose where to look');
     }
-    revealArea(ctx.g, p.level, square, 1);
+    revealArea(ctx.g, p.level, square, 1, false);
     emit(ctx, { type: 'used', player: p.id, kind: 'orb', square });
   },
   stones(ctx, p, { a, b, turnA, turnB }) {

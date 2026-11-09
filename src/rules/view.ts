@@ -13,6 +13,8 @@ import { doomLimit } from './turns.ts';
 import type {
   Board,
   BoardView,
+  Player,
+  Token,
   Feature,
   PathLevel,
   MobState,
@@ -44,6 +46,7 @@ export function viewFor(state: GameState, viewer: PlayerId, events: GameEvent[] 
       hp: p.hp,
       maxHp: maxHp(p),
       stats: Object.fromEntries(STATS.map((s) => [s, stat(p, s)])) as Stats,
+      trinkets: [...p.trinkets],
       publicScore: publicScore(p),
     })),
     me: mine
@@ -67,8 +70,8 @@ export function viewFor(state: GameState, viewer: PlayerId, events: GameEvent[] 
     turn: state.turn,
     town: { size: TOWN.size, buildings: TOWN.buildings, gates: TOWN.gates },
     boards: {
-      forest: boardView(state.boards.forest, 'forest'),
-      dungeon: boardView(state.boards.dungeon, 'dungeon'),
+      forest: boardView(state.boards.forest, 'forest', mine),
+      dungeon: boardView(state.boards.dungeon, 'dungeon', mine),
     },
     clash: state.clash,
     response: state.response,
@@ -89,14 +92,14 @@ export function viewFor(state: GameState, viewer: PlayerId, events: GameEvent[] 
   };
 }
 
-function boardView(board: Board, level: PathLevel): BoardView {
+function boardView(board: Board, level: PathLevel, viewer: Player | undefined): BoardView {
   return {
     size: board.size,
     squares: board.tiles.map((exits, i) => ({
       exits: level === 'forest' || board.revealed[i] ? exits : null,
       revealed: board.revealed[i] ?? false,
       feature: visibleFeature(board, i),
-      token: (board.revealed[i] && board.tokens[i]) || null,
+      token: visibleToken(board, i, viewer),
       pile: (board.revealed[i] && board.piles[i]) || null,
       mob: board.revealed[i] && board.mobs[i] ? mobView(board.mobs[i]) : null,
     })),
@@ -119,4 +122,12 @@ function visibleFeature(board: Board, i: number): Feature | null {
   const f = board.features[i];
   if (!f) return null;
   return f.type === 'gate' || board.revealed[i] ? f : null;
+}
+
+/** Contents show once revealed; a Cache only where Torchlight reached and only to enough INT. */
+function visibleToken(board: Board, i: number, viewer: Player | undefined): Token | null {
+  const t = board.tokens[i];
+  if (!t || !board.revealed[i]) return null;
+  if (t.type !== 'cache') return t;
+  return board.lit[i] && viewer && stat(viewer, 'INT') >= t.rating ? t : null;
 }
