@@ -6,7 +6,7 @@ import { ambush, mobUnder } from './clash.ts';
 import { arriveInTown, sendHome } from './home.ts';
 import { collect } from './pickups.ts';
 import { die } from './rng.ts';
-import { stat } from './stats.ts';
+import { findItem, stat } from './stats.ts';
 import { reveal } from './torchlight.ts';
 import type {
   Action,
@@ -159,4 +159,19 @@ export function chooseHeading(ctx: Ctx, p: Player, dir: Dir): void {
 
 export function featureSquare(g: GameState, level: PathLevel, type: Feature['type']): number {
   return Number(Object.entries(g.boards[level].features).find(([, f]) => f.type === type)?.[0]);
+}
+
+/** Lodestone Compass: before moving, spend a Pivot to turn, but never a U-turn. */
+export function compassOptions(g: GameState, p: Player): Action[] {
+  if (p.level === 'town' || p.pivots <= 0 || !findItem(p, 'compass')) return [];
+  return DIRS.filter((d) => d !== p.heading && d !== OPPOSITE[p.heading]).map((dir) => ({
+    type: 'compass' as const,
+    dir,
+  }));
+}
+
+export function compassTurn(ctx: Ctx, p: Player, dir: Dir): void {
+  p.pivots--;
+  p.heading = dir;
+  emit(ctx, { type: 'compassTurned', player: p.id, dir });
 }

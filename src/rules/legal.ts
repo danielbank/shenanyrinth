@@ -2,7 +2,7 @@
 import { currentPlayer } from './context.ts';
 import { clashOptions } from './clash.ts';
 import { errandOptions } from './errands.ts';
-import { headingOptions, stepOptions } from './movement.ts';
+import { compassOptions, headingOptions, stepOptions } from './movement.ts';
 import type { Action, GameState, PlayerId } from './types.ts';
 
 export function legalActions(g: GameState, id: PlayerId): Action[] {
@@ -18,6 +18,7 @@ export function legalActions(g: GameState, id: PlayerId): Action[] {
       break;
     case 'prepare':
       out.push({ type: 'roll' });
+      out.push(...compassOptions(g, p));
       break;
     case 'move': {
       const turn = g.turn;

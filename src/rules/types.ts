@@ -26,6 +26,12 @@ export interface Player {
   setupDone: boolean;
   /** Setup points plus Training (0–5). */
   base: Stats;
+  /** Gear tier held in each Stat line (0 = none). */
+  gear: Stats;
+  /** Stats already Trained this game. */
+  trained: Stat[];
+  /** Carried items other than tiered Gear. */
+  items: Item[];
   hp: number;
   pack: Pack;
   keep: number;
@@ -65,6 +71,15 @@ export interface Board {
 }
 
 export type PathLevel = 'forest' | 'dungeon';
+
+export type ItemKind = 'boots' | 'compass';
+
+export interface Item {
+  id: number;
+  kind: ItemKind;
+  /** Charges left, for Charms. */
+  charges?: number;
+}
 
 export type Phase = 'lobby' | 'setup' | 'playing' | 'over';
 export type TurnPhase = 'start' | 'prepare' | 'move' | 'after';
@@ -125,6 +140,7 @@ export interface GameState {
   turn: Turn | null;
   boards: Record<PathLevel, Board>;
   clash: Clash | null;
+  nextItemId: number;
   /** The feat was performed: the game ends after this Round. */
   endTriggered: boolean;
 }
@@ -139,6 +155,9 @@ export type Action =
   | { type: 'takeFeature' }
   | { type: 'chooseHeading'; dir: Dir }
   | { type: 'deposit'; amount: number }
+  | { type: 'buy'; item: string; material?: 'herbs' | 'artifacts' }
+  | { type: 'train'; stat: Stat }
+  | { type: 'compass'; dir: Dir }
   | { type: 'exchange'; approach: Approach }
   | { type: 'retreat' }
   | { type: 'resumeClash' }
@@ -183,6 +202,9 @@ export type GameEvent = Base &
         pile: Pack | null;
       }
     | { type: 'deposited'; player: PlayerId; amount: number }
+    | { type: 'bought'; player: PlayerId; item: string }
+    | { type: 'trained'; player: PlayerId; stat: Stat }
+    | { type: 'compassTurned'; player: PlayerId; dir: Dir }
     | { type: 'healed'; player: PlayerId; hp: number }
     | { type: 'ambushed'; player: PlayerId; level: PathLevel; square: number; mob: string }
     | {
@@ -240,6 +262,10 @@ export interface PrivatePlayer {
   pack: Pack;
   keep: number;
   base: Stats;
+  gear: Stats;
+  trained: Stat[];
+  items: Item[];
+  slotsUsed: number;
   pivots: number;
 }
 
@@ -281,6 +307,12 @@ export interface BoardView {
   squares: SquareView[];
 }
 
+export interface Offer {
+  action: Action;
+  name: string;
+  price: { gold: number; herbs?: number; artifacts?: number };
+}
+
 export interface PlayerView {
   you: PlayerId | null;
   phase: Phase;
@@ -295,6 +327,8 @@ export interface PlayerView {
   clash: Clash | null;
   final: { scores: Score[]; winners: PlayerId[] } | null;
   options: Action[];
+  /** Every legal purchase or Training, with its name and Haggled price. */
+  offers: Offer[];
   /** Where each legal step leads, for outlining on the board. */
   moves: MoveOutline[];
   events: GameEvent[];

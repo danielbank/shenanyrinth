@@ -86,6 +86,17 @@ function button(view: PlayerView, action: Action) {
           Move away
         </button>,
       ];
+    case 'compass':
+      return [
+        <button
+          key={`compass-${action.dir}`}
+          type="button"
+          aria-label={`Compass: turn ${action.dir}`}
+          onClick={go}
+        >
+          🧭{ARROW[action.dir]}
+        </button>,
+      ];
     case 'endTurn':
       return [
         <button key="end" type="button" onClick={go}>

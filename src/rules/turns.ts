@@ -2,6 +2,7 @@
 import { emit, findPlayer, type Ctx } from './context.ts';
 import { DOOM_TRACK, TOWN } from './data.ts';
 import { winners } from './score.ts';
+import { findItem } from './stats.ts';
 import type { GameState } from './types.ts';
 
 export const PIVOT_LIMIT = 2;
@@ -14,7 +15,7 @@ export function doomLimit(g: GameState): number {
 export function startTurn(ctx: Ctx, seat: number): void {
   const { g } = ctx;
   const p = findPlayer(g, g.seats[seat]!)!;
-  p.pivots = PIVOT_LIMIT;
+  p.pivots = PIVOT_LIMIT + (findItem(p, 'boots') ? 1 : 0);
   g.turn = {
     player: p.id,
     phase: 'prepare',

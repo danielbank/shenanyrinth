@@ -10,9 +10,9 @@ import {
 } from './data.ts';
 import { RuleError } from './errors.ts';
 import { exchange, moveAway, resumeClash, retreat } from './clash.ts';
-import { deposit } from './errands.ts';
+import { buy, deposit, train } from './errands.ts';
 import { legalActions } from './legal.ts';
-import { chooseHeading, endMove, roll, step, takeFeature } from './movement.ts';
+import { chooseHeading, compassTurn, endMove, roll, step, takeFeature } from './movement.ts';
 import { shuffle } from './rng.ts';
 import { endTurn, startTurn } from './turns.ts';
 import type { Action, ActionResult, GameState, Player, PlayerId, Stats } from './types.ts';
@@ -74,6 +74,12 @@ function handle(ctx: Ctx, actor: PlayerId, action: Action): void {
       return resumeClash(ctx, me(g));
     case 'moveAway':
       return moveAway(ctx);
+    case 'buy':
+      return buy(ctx, me(g), action.item);
+    case 'train':
+      return train(ctx, me(g), action.stat);
+    case 'compass':
+      return compassTurn(ctx, me(g), action.dir);
     case 'endTurn':
       return endTurn(ctx);
   }
@@ -97,6 +103,9 @@ function join(ctx: Ctx, actor: PlayerId, action: Extract<Action, { type: 'join' 
     online: true,
     setupDone: false,
     base: zero,
+    gear: { ...zero },
+    trained: [],
+    items: [],
     hp: HP_BASE,
     pack: { gold: 0, herbs: 0, artifacts: 0 },
     keep: 0,

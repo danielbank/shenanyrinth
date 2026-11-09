@@ -17,6 +17,7 @@ export function newGame({ seed }: { seed: number }): GameState {
     turn: null,
     boards: {} as GameState['boards'],
     clash: null,
+    nextItemId: 1,
     endTriggered: false,
   };
   g.boards.forest = generateForest(g);

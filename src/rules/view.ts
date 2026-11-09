@@ -2,10 +2,11 @@
 import { TOWN } from './data.ts';
 import { mobDef } from './clash.ts';
 import { currentPlayer } from './context.ts';
+import { offers } from './errands.ts';
 import { legalActions } from './legal.ts';
 import { moveOutlines } from './movement.ts';
 import { publicScore, score, winners } from './score.ts';
-import { maxHp, stat } from './stats.ts';
+import { maxHp, slotsUsed, stat } from './stats.ts';
 import { STATS } from './data.ts';
 import { doomLimit } from './turns.ts';
 import type {
@@ -45,7 +46,16 @@ export function viewFor(state: GameState, viewer: PlayerId, events: GameEvent[] 
       publicScore: publicScore(p),
     })),
     me: mine
-      ? { pack: { ...mine.pack }, keep: mine.keep, base: { ...mine.base }, pivots: mine.pivots }
+      ? {
+          pack: { ...mine.pack },
+          keep: mine.keep,
+          base: { ...mine.base },
+          gear: { ...mine.gear },
+          trained: [...mine.trained],
+          items: mine.items.map((it) => ({ ...it })),
+          slotsUsed: slotsUsed(mine),
+          pivots: mine.pivots,
+        }
       : null,
     seats: state.seats,
     round: state.round,
@@ -60,6 +70,13 @@ export function viewFor(state: GameState, viewer: PlayerId, events: GameEvent[] 
     final:
       state.phase === 'over' ? { scores: state.players.map(score), winners: winners(state) } : null,
     options: legalActions(state, viewer),
+    offers:
+      current?.id === viewer &&
+      state.turn?.phase === 'after' &&
+      !state.turn.choosingHeading &&
+      !state.clash
+        ? offers(state, current)
+        : [],
     moves: current && current.id === viewer ? moveOutlines(state, current) : [],
     events: events.filter((e) => !e.only || e.only.includes(viewer)),
   };

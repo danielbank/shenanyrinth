@@ -146,3 +146,36 @@ export const GUARDIAN_BONUS = 5;
 export const MOBS: Record<string, MobDef> = Object.fromEntries(
   [...FOREST_MOBS, ...DUNGEON_MOBS, GUARDIAN].map((m) => [m.name, m]),
 );
+
+export const BASE_CAP = 5;
+export const TOTAL_CAP = 7;
+export const SLOTS = 5;
+
+export interface Price {
+  gold: number;
+  herbs?: number;
+  artifacts?: number;
+}
+
+/** Gear upgrade prices by the tier being bought. */
+export const GEAR_PRICES: Record<number, Price> = {
+  1: { gold: 5 },
+  2: { gold: 4 },
+  3: { gold: 6, artifacts: 1 },
+};
+
+export const GEAR_NAMES: Record<(typeof STATS)[number], [string, string, string]> = {
+  CON: ['Bronze Buckler', 'Iron Shield', 'Enchanted Aegis'],
+  STR: ['Rusty Sword', 'Steel Blade', 'Runed Greatsword'],
+  DEX: ['Leather Gloves', "Thief's Gloves", 'Shadowsilk Gloves'],
+  INT: ["Apprentice's Tome", 'Grimoire', "Archmage's Codex"],
+  WIS: ['Tin Lantern', "Oracle's Lantern", 'Lantern of the Seer'],
+  CHA: ['Feathered Cap', 'Silver Circlet', 'Crown of Charm'],
+};
+
+export const SPECIAL_GEAR = {
+  boots: { name: 'Boots of Second Thoughts', price: { gold: 8, artifacts: 1 } },
+  compass: { name: 'Lodestone Compass', price: { gold: 4, artifacts: 1 } },
+} as const;
+
+export const TRAINING_PRICE: Price = { gold: 6, herbs: 1, artifacts: 1 };
