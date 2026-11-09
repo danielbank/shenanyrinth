@@ -1,0 +1,11 @@
+node_modules
+dist
+coverage
+package-lock.json
+saves
+.agents
+.claude
+skills-lock.json
+docs
+GLOSSARY.md
+CLAUDE.md

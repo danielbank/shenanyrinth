@@ -1,0 +1,4 @@
+{
+  "*.{ts,tsx,js,json,css,md,yml,html}": "prettier --write",
+  "src/**/*.{ts,tsx}": "vitest related --run --passWithNoTests"
+}

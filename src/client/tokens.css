@@ -1,0 +1,67 @@
+/* Design tokens: the Tiny palette and the whole-number pixel scale. */
+:root {
+  --outline: #3f2631;
+  --ink: #f4e9d8;
+  --ink-dim: #b9a78f;
+  --panel: #472d3c;
+  --panel-2: #5e3a4b;
+  --ground: #2a1c24;
+  --grass: #5a8a3c;
+  --dirt: #b98a55;
+  --rock: #3b3540;
+  --stone: #8c8492;
+  --gold: #f2c14e;
+  --herb: #6fbf5a;
+  --artifact: #7ec8e3;
+  --free: #5fd35f;
+  --pivot: #ff9a3c;
+  --danger: #e0533d;
+  --scale: 2;
+  --tile: calc(16px * var(--scale));
+  --font: 'Courier New', ui-monospace, monospace;
+  --red: #d9534f;
+  --blue: #4f8fd9;
+  --green: #5cb85c;
+  --yellow: #e6c229;
+  --purple: #9b59b6;
+  --orange: #e67e22;
+}
+@media (min-width: 900px) {
+  :root {
+    --scale: 3;
+  }
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font);
+  image-rendering: pixelated;
+}
+button {
+  font: inherit;
+  color: var(--ink);
+  background: var(--panel-2);
+  border: 2px solid var(--outline);
+  padding: 4px 10px;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+input,
+select {
+  font: inherit;
+  background: var(--ground);
+  color: var(--ink);
+  border: 2px solid var(--outline);
+  padding: 4px;
+}
