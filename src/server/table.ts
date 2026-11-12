@@ -132,6 +132,10 @@ export class Table {
       this.picked.delete(id);
     }
     if (action.type === 'removeBot') this.bots.delete(action.player);
+    if (action.type === 'newGame') {
+      this.bots.clear();
+      this.picked.clear();
+    }
     this.watchResponseWindow();
     for (const l of this.listeners) l(events);
   }

@@ -1,5 +1,6 @@
 import type { PlayerView } from '../../rules/index.ts';
 import styles from './FinalScores.module.css';
+import { NewGameButton } from './NewGameButton.tsx';
 
 export function FinalScores({ view }: { view: PlayerView }) {
   const final = view.final;
@@ -38,6 +39,7 @@ export function FinalScores({ view }: { view: PlayerView }) {
             ))}
           </tbody>
         </table>
+        <NewGameButton view={view} />
       </div>
     </dialog>
   );

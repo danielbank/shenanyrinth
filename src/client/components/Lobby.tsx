@@ -3,6 +3,7 @@ import { COLOURS, HEROES, MAX_PLAYERS } from '../../rules/data.ts';
 import type { Colour, Hero, PlayerView } from '../../rules/index.ts';
 import { send } from '../socket.ts';
 import { HeroSprite } from './HeroSprite.tsx';
+import { NewGameButton } from './NewGameButton.tsx';
 import styles from './Lobby.module.css';
 
 export function Lobby({ view }: { view: PlayerView }) {
@@ -42,6 +43,7 @@ export function Lobby({ view }: { view: PlayerView }) {
         <StartButton count={view.players.length} />
       ) : null}
       {view.phase !== 'lobby' ? <p>The game has started without you.</p> : null}
+      {view.phase === 'lobby' ? <NewGameButton view={view} /> : null}
     </main>
   );
 }

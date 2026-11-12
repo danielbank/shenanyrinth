@@ -169,6 +169,10 @@ Slaying the Dungeon's Guardian, the Red Wyrm, triggers the end. Otherwise the Do
 96. As a Player, I want Bots marked with a BOT tag, so that I always know who's a person.
 97. As a Player, I want a Bot's Turn to play at a pace I can follow but that doesn't drag, so that waiting on Bots stays short.
 
+### Starting over
+
+98. As a Host, I want a New game button that clears the table back to an empty Lobby, so that we can start from scratch without restarting the server.
+
 ## Implementation Decisions
 
 ### Architecture (ADR 0001)
@@ -432,6 +436,12 @@ Gags have a short cooldown.
 - **No gags:** Bots never slap and never squeak the Rubber Chicken. Trinket gags that fire on events still fire for a Bot that owns the Trinket.
 - **Saving:** Bot seats are saved like any other seat and resume after the server reloads a game.
 - **Offline people** are still skipped by any Player; a Bot never takes over their seat.
+
+### New game
+
+- **Who and when:** only the Host sees **New game**, at any time: in the Lobby, mid-game and on Final Scores. It asks first, in the page: "End this game for everyone?"
+- **What it clears:** everything. The game, every Player and every Bot are gone, and there's no Host. Everyone lands on the join form, and whoever joins first becomes the Host. Each browser keeps its seat token, so a person who rejoins can still reload back into their seat.
+- **Saving:** the empty table is saved at once, so a server restart afterwards doesn't bring the old game back.
 
 ### Victory
 

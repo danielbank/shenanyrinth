@@ -1,6 +1,7 @@
 import { GEAR_NAMES, STATS } from '../../rules/data.ts';
 import type { PlayerView } from '../../rules/index.ts';
 import { itemName } from '../itemNames.ts';
+import { NewGameButton } from './NewGameButton.tsx';
 import { SoundSettings } from './SoundSettings.tsx';
 import { send } from '../socket.ts';
 import { Glyph } from './Icon.tsx';
@@ -85,6 +86,7 @@ export function Sheet({
         />{' '}
         Auto-pass Response windows
       </label>
+      <NewGameButton view={view} />
     </dialog>
   );
 }

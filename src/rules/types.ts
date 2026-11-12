@@ -258,6 +258,8 @@ export type Action =
   | { type: 'addBot'; bot?: { id: PlayerId; name: string; hero: Hero; colour: Colour } }
   | { type: 'removeBot'; player: PlayerId }
   | { type: 'startGame' }
+  /** The Host clears the table back to an empty Lobby. */
+  | { type: 'newGame' }
   | { type: 'setStats'; stats: Stats }
   | { type: 'roll' }
   | { type: 'step'; dir: Dir }
@@ -313,6 +315,7 @@ export type GameEvent = Base &
   (
     | { type: 'joined'; player: PlayerId }
     | { type: 'botRemoved'; player: PlayerId }
+    | { type: 'tableCleared' }
     | { type: 'gameStarted'; seats: PlayerId[] }
     | { type: 'statsSet'; player: PlayerId }
     | { type: 'turnStarted'; player: PlayerId; round: number }

@@ -27,7 +27,8 @@ import {
   step,
   takeFeature,
 } from './movement.ts';
-import { shuffle } from './rng.ts';
+import { die, shuffle } from './rng.ts';
+import { newGame } from './setup.ts';
 import { endTurn, startTurn } from './turns.ts';
 import type { Action, ActionResult, GameState, Player, PlayerId, Stats } from './types.ts';
 
@@ -41,6 +42,7 @@ const FREE_FORM = new Set<Action['type']>([
   'discard',
   'join',
   'addBot',
+  'newGame',
   'removeBot',
   'setStats',
   'use',
@@ -78,6 +80,8 @@ function handle(ctx: Ctx, actor: PlayerId, action: Action): void {
       return join(ctx, actor, action);
     case 'addBot':
       return addBot(ctx, actor, action);
+    case 'newGame':
+      return clearTable(ctx, actor);
     case 'removeBot':
       return removeBot(ctx, actor, action.player);
     case 'startGame':
@@ -180,6 +184,13 @@ function addBot(ctx: Ctx, actor: PlayerId, action: Extract<Action, { type: 'addB
   if (actor !== g.hostId) throw new RuleError('Only the Host can add a Bot');
   if (!action.bot) throw new RuleError('The server picks who a Bot is');
   seat(ctx, action.bot.id, action.bot, true);
+}
+
+/** Everything goes: the game, every Player and Bot, and the Host role. */
+function clearTable(ctx: Ctx, actor: PlayerId): void {
+  if (actor !== ctx.g.hostId) throw new RuleError('Only the Host can start a new game');
+  ctx.g = newGame({ seed: die(ctx.g, 2 ** 30) });
+  emit(ctx, { type: 'tableCleared' });
 }
 
 function removeBot(ctx: Ctx, actor: PlayerId, id: PlayerId): void {
