@@ -12,6 +12,7 @@
     "build": "vite build",
     "serve": "node src/server/main.ts",
     "dev": "node scripts/dev.ts",
+    "reset": "node scripts/reset.ts",
     "test": "vitest run",
     "coverage": "vitest run --coverage",
     "sim": "node scripts/sim.ts",
