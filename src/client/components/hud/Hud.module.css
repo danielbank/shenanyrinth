@@ -35,6 +35,15 @@
   font-weight: bold;
   padding: 0 3px;
 }
+.botTag {
+  position: absolute;
+  top: -8px;
+  left: -4px;
+  background: var(--ink-dim);
+  color: var(--outline);
+  font-size: 8px;
+  padding: 0 3px;
+}
 .score {
   color: var(--gold);
   font-weight: bold;

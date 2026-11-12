@@ -40,6 +40,8 @@ const FREE_FORM = new Set<Action['type']>([
   'squeak',
   'discard',
   'join',
+  'addBot',
+  'removeBot',
   'setStats',
   'use',
   'closeResponse',
@@ -74,6 +76,10 @@ function handle(ctx: Ctx, actor: PlayerId, action: Action): void {
   switch (action.type) {
     case 'join':
       return join(ctx, actor, action);
+    case 'addBot':
+      return addBot(ctx, actor, action);
+    case 'removeBot':
+      return removeBot(ctx, actor, action.player);
     case 'startGame':
       if (g.players.length < MIN_PLAYERS) {
         throw new RuleError(`A game needs at least ${MIN_PLAYERS} Players`);
@@ -164,16 +170,46 @@ function me(g: GameState): Player {
 
 function join(ctx: Ctx, actor: PlayerId, action: Extract<Action, { type: 'join' }>): void {
   const { g } = ctx;
+  seat(ctx, actor, action, false);
+  g.hostId ??= actor;
+}
+
+/** The Host seats a Bot, whose id, name, hero and colour the server chose. */
+function addBot(ctx: Ctx, actor: PlayerId, action: Extract<Action, { type: 'addBot' }>): void {
+  const { g } = ctx;
+  if (actor !== g.hostId) throw new RuleError('Only the Host can add a Bot');
+  if (!action.bot) throw new RuleError('The server picks who a Bot is');
+  seat(ctx, action.bot.id, action.bot, true);
+}
+
+function removeBot(ctx: Ctx, actor: PlayerId, id: PlayerId): void {
+  const { g } = ctx;
+  if (actor !== g.hostId) throw new RuleError('Only the Host can remove a Bot');
   if (g.phase !== 'lobby') throw new RuleError('The game has already started');
-  if (findPlayer(g, actor)) throw new RuleError('You have already joined');
+  if (!findPlayer(g, id)?.bot) throw new RuleError('Only a Bot can be removed');
+  g.players = g.players.filter((p) => p.id !== id);
+  emit(ctx, { type: 'botRemoved', player: id });
+}
+
+function seat(
+  ctx: Ctx,
+  id: PlayerId,
+  who: { name: string; hero: Player['hero']; colour: Player['colour'] },
+  bot: boolean,
+): void {
+  const { g } = ctx;
+  if (g.phase !== 'lobby') throw new RuleError('The game has already started');
+  if (findPlayer(g, id)) throw new RuleError('You have already joined');
   if (g.players.length >= MAX_PLAYERS) throw new RuleError('The table is full');
   const zero: Stats = { STR: 0, DEX: 0, INT: 0, WIS: 0, CON: 0, CHA: 0 };
   g.players.push({
-    id: actor,
-    name: String(action.name).slice(0, 16) || 'Player',
-    hero: action.hero,
-    colour: action.colour,
+    id,
+    // A Bot's name is its build's, which can run longer than a person's.
+    name: String(who.name).slice(0, bot ? 24 : 16) || 'Player',
+    hero: who.hero,
+    colour: who.colour,
     online: true,
+    bot,
     setupDone: false,
     base: zero,
     gear: { ...zero },
@@ -206,8 +242,7 @@ function join(ctx: Ctx, actor: PlayerId, action: Extract<Action, { type: 'join' 
     shakeProtected: false,
     stoneskin: false,
   });
-  g.hostId ??= actor;
-  emit(ctx, { type: 'joined', player: actor });
+  emit(ctx, { type: 'joined', player: id });
 }
 
 function startGame(ctx: Ctx): void {

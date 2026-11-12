@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react';
-import { COLOURS, HEROES } from '../../rules/data.ts';
+import { COLOURS, HEROES, MAX_PLAYERS } from '../../rules/data.ts';
 import type { Colour, Hero, PlayerView } from '../../rules/index.ts';
 import { send } from '../socket.ts';
 import { HeroSprite } from './HeroSprite.tsx';
 import styles from './Lobby.module.css';
 
 export function Lobby({ view }: { view: PlayerView }) {
+  const hosting = view.phase === 'lobby' && view.players.some((p) => p.id === view.you && p.isHost);
   return (
     <main className={styles.lobby}>
       <h1 className={styles.title}>Shenanyrinth</h1>
@@ -16,11 +17,27 @@ export function Lobby({ view }: { view: PlayerView }) {
           <li key={p.id} className={styles.player}>
             <HeroSprite hero={p.hero} colour={p.colour} />
             <span>{p.name}</span>
+            {p.bot ? <span className={styles.bot}>BOT</span> : null}
             {p.isHost ? <small>(Host)</small> : null}
             {p.id === view.you ? <small>(you)</small> : null}
+            {hosting && p.bot ? (
+              <button
+                type="button"
+                className={styles.remove}
+                aria-label={`Remove ${p.name}`}
+                onClick={() => send({ type: 'removeBot', player: p.id })}
+              >
+                Remove
+              </button>
+            ) : null}
           </li>
         ))}
       </ul>
+      {hosting && view.players.length < MAX_PLAYERS ? (
+        <button type="button" onClick={() => send({ type: 'addBot' })}>
+          Add bot
+        </button>
+      ) : null}
       {view.options.some((o) => o.type === 'startGame') ? (
         <StartButton count={view.players.length} />
       ) : null}

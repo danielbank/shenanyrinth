@@ -38,6 +38,7 @@ export function viewFor(state: GameState, viewer: PlayerId, events: GameEvent[] 
       hero: p.hero,
       colour: p.colour,
       online: p.online,
+      bot: p.bot,
       isHost: p.id === state.hostId,
       setupDone: p.setupDone,
       level: p.level,

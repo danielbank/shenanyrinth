@@ -10,7 +10,9 @@ import type { PlayerId } from './types.ts';
 export function passHost(ctx: Ctx, actor: PlayerId, to: PlayerId): void {
   const { g } = ctx;
   if (actor !== g.hostId) throw new RuleError('Only the Host can pass the Host role');
-  if (!findPlayer(g, to)) throw new RuleError('Pass the Host role to a Player at the table');
+  const next = findPlayer(g, to);
+  if (!next) throw new RuleError('Pass the Host role to a Player at the table');
+  if (next.bot) throw new RuleError('The Host role only passes to a person');
   g.hostId = to;
   emit(ctx, { type: 'hostPassed', to });
 }
@@ -25,7 +27,9 @@ export function presence(ctx: Ctx, id: PlayerId, online: boolean): void {
   defendIfAway(ctx);
   if (!online && g.hostId === id) {
     const seat = g.players.indexOf(p);
-    const next = [...g.players.slice(seat + 1), ...g.players.slice(0, seat)].find((q) => q.online);
+    const next = [...g.players.slice(seat + 1), ...g.players.slice(0, seat)].find(
+      (q) => q.online && !q.bot,
+    );
     if (next) {
       g.hostId = next.id;
       emit(ctx, { type: 'hostPassed', to: next.id });

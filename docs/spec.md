@@ -162,6 +162,13 @@ Slaying the Dungeon's Guardian, the Red Wyrm, triggers the end. Otherwise the Do
 92. As a Player who prefers reduced motion, I want animations skipped, so that the game is comfortable.
 93. As a Player, I want to skip ahead through other Players' animations, so that waiting is short.
 
+### Bots
+
+94. As a Host, I want to add Bots in the Lobby, so that we can play with fewer friends, or I can play alone.
+95. As a Host, I want to remove a Bot before the game starts, so that the table is the size we want.
+96. As a Player, I want Bots marked with a BOT tag, so that I always know who's a person.
+97. As a Player, I want a Bot's Turn to play at a pace I can follow but that doesn't drag, so that waiting on Bots stays short.
+
 ## Implementation Decisions
 
 ### Architecture (ADR 0001)
@@ -169,7 +176,7 @@ Slaying the Dungeon's Guardian, the Red Wyrm, triggers the end. Otherwise the Do
 - **Language and stack:** strict TypeScript everywhere. The client is React 19 on Vite, as a client-only single-page app. The server is Express + Socket.IO, running its TypeScript directly on Node's built-in type stripping (Node 22.18 or later). TypeScript is limited to syntax Node can strip: no enums and no namespaces.
 - **Three modules in one package:**
   - **Rules:** pure, with no I/O; shared by everything.
-  - **Server:** sockets, seats, the Host, timers and saving.
+  - **Server:** sockets, seats, the Host, timers, saving and Bots.
   - **Client:** React.
 - **One port:** a single Express server serves the built client and Socket.IO, so one ngrok tunnel works. In dev, Vite's dev server proxies the socket to the server. One start command builds and runs, with an auto-restart loop.
 - **The server is authoritative.** Rules run only on the server. After every change, each Player is sent their own view of the state. That view includes:
@@ -416,6 +423,16 @@ Gags have a short cooldown.
   7. Respond: Meddle, Sway, Resist or Pass
   8. skip an offline Player
 
+### Bots
+
+- **Adding them:** only the Host sees "Add bot" in the Lobby. Each press adds one Bot seat, up to 6 seats in total, and the Host can remove a Bot before the game starts. A game needs 2–6 seats with at least one person. The Host is always a person: the role never passes to a Bot.
+- **Who they are:** each Bot gets one of the Balance simulation's builds at random, is named after it (for example "Brawler Bot"), and takes a random free hero and colour. The Player row shows a BOT tag. Bots skip stat setup and take their build's Stats when the game starts.
+- **One brain:** the Bot that plays at the table is the fuzz harness's Bot, moved into the source so both share it. It runs on the server as a seat with no socket, and it decides only from its own Player's view, like any Player. It acts through the rules engine's apply-action seam, exactly as a person's action does.
+- **Pace:** about 1 second per decision (rolling, a direction at a fork on a path Level, a Clash Approach, buying, a Response), and about 0.2 seconds per step that needs no choosing (every step in the Town, and a path step with only one way on), so a 7-square move takes about 1.5 seconds. A Bot never skips an offline person's Turn. In a Response window a Bot answers within that second and never holds up the 8-second timer.
+- **No gags:** Bots never slap and never squeak the Rubber Chicken. Trinket gags that fire on events still fire for a Bot that owns the Trinket.
+- **Saving:** Bot seats are saved like any other seat and resume after the server reloads a game.
+- **Offline people** are still skipped by any Player; a Bot never takes over their seat.
+
 ### Victory
 
 - **The end:** the feat triggers the end. Otherwise the **Doom Track** ends the game after **30 / 24 / 20 / 19 / 18 Rounds** for 2 / 3 / 4 / 5 / 6 Players. Either way, play finishes the current Round.
@@ -530,7 +547,7 @@ Generated Web Audio makes the slap clap and the Trinket gags. Each Player has mu
   - Server tests run the real Express and Socket.IO on a random port, with real `socket.io-client` sockets as Players.
   - Saving uses a real temporary folder.
   - Only time is faked, for the Response window timer.
-- **Fuzzing:** the Balance simulation's bots, ported to drive the real rules engine, play about 200 seeded games at mixed Player counts in CI. Every Turn they check these invariants:
+- **Fuzzing:** the Balance simulation's bots, ported to drive the real rules engine (the same Bot that plays at the table), play about 200 seeded games at mixed Player counts in CI. Every Turn they check these invariants:
   - Exits stay on the board.
   - Slots stay at 5 or fewer.
   - Stats stay within their caps.
@@ -554,7 +571,9 @@ Generated Web Audio makes the slap clap and the Trinket gags. Each Player has mu
 - Background music.
 - Keep attacks, and trading or gifting between Players.
 - Secret per-Player goals.
-- Bots as opponents in the real game (the bots are a test harness only).
+- Bot gags: Bots never slap, hold grudges or squeak on demand.
+- A Bot taking over an offline person's seat.
+- Bot difficulty levels.
 - Testing React components directly.
 
 ## Further Notes

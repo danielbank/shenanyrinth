@@ -5,11 +5,15 @@ A 2–6 player, turn-based RPG board game played in the browser, where Players r
 ## Players and turns
 
 **Player**:
-One of the 2–6 people in a game, each controlling a single piece on the board.
+One of the 2–6 seats in a game, each controlling a single piece on the board; played by a person or a Bot.
 _Avoid_: User, character (when meaning the person)
 
+**Bot**:
+A Player whose seat is played by the Host's server instead of a person.
+_Avoid_: AI, computer player, NPC
+
 **Host**:
-The Player holding the in-game role that starts the game and manages settings; the role can pass to another Player.
+The Player holding the in-game role that starts the game and manages settings; the role can pass to another Player, but never to a Bot.
 _Avoid_: Admin, server owner
 
 **Turn**:

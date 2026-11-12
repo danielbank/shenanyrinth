@@ -14,35 +14,8 @@ import {
   withMob,
   withTiles,
 } from '../rules/testing.ts';
-import { startServer, type Clock, type RunningServer } from './app.ts';
-import { connect, type TestClient } from './testing.ts';
-
-/** A fake clock: only the Response window timer runs on it. */
-function fakeClock() {
-  let now = 0;
-  let timers: { at: number; fn: () => void; id: number }[] = [];
-  let next = 1;
-  const clock: Clock = {
-    now: () => now,
-    setTimeout(fn, ms) {
-      const id = next++;
-      timers.push({ at: now + ms, fn, id });
-      return id;
-    },
-    clearTimeout(id) {
-      timers = timers.filter((t) => t.id !== id);
-    },
-  };
-  return {
-    clock,
-    tick(ms: number) {
-      now += ms;
-      const due = timers.filter((t) => t.at <= now);
-      timers = timers.filter((t) => t.at > now);
-      for (const t of due) t.fn();
-    },
-  };
-}
+import { startServer, type RunningServer } from './app.ts';
+import { connect, fakeClock, type TestClient } from './testing.ts';
 
 let server: RunningServer;
 const clients: TestClient[] = [];

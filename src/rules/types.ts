@@ -24,6 +24,8 @@ export interface Player {
   hero: Hero;
   colour: Colour;
   online: boolean;
+  /** Played by the Host's server instead of a person. */
+  bot: boolean;
   setupDone: boolean;
   /** Setup points plus Training (0–5). */
   base: Stats;
@@ -252,6 +254,9 @@ export interface GameState {
 
 export type Action =
   | { type: 'join'; name: string; hero: Hero; colour: Colour }
+  /** The Host adds a Bot; the server fills in who it is. */
+  | { type: 'addBot'; bot?: { id: PlayerId; name: string; hero: Hero; colour: Colour } }
+  | { type: 'removeBot'; player: PlayerId }
   | { type: 'startGame' }
   | { type: 'setStats'; stats: Stats }
   | { type: 'roll' }
@@ -307,6 +312,7 @@ interface Base {
 export type GameEvent = Base &
   (
     | { type: 'joined'; player: PlayerId }
+    | { type: 'botRemoved'; player: PlayerId }
     | { type: 'gameStarted'; seats: PlayerId[] }
     | { type: 'statsSet'; player: PlayerId }
     | { type: 'turnStarted'; player: PlayerId; round: number }
@@ -432,6 +438,7 @@ export interface PublicPlayer {
   hero: Hero;
   colour: Colour;
   online: boolean;
+  bot: boolean;
   isHost: boolean;
   setupDone: boolean;
   level: LevelName;

@@ -4,6 +4,7 @@ import type { AddressInfo } from 'node:net';
 import express from 'express';
 import { Server } from 'socket.io';
 import { RuleError, type Action } from '../rules/index.ts';
+import { BotRunner } from './botRunner.ts';
 import { loadSnapshot, saveSnapshot } from './save.ts';
 import { Table } from './table.ts';
 
@@ -62,6 +63,9 @@ export async function startServer(options: ServerOptions = {}): Promise<RunningS
     }
   });
 
+  // After the views are sent, so a Bot's move always follows the change it reacts to.
+  const bots = new BotRunner(table);
+
   io.on('connection', (socket) => {
     const token: unknown = socket.handshake.auth.token;
     const id = table.playerFor(typeof token === 'string' && token ? token : socket.id);
@@ -89,6 +93,7 @@ export async function startServer(options: ServerOptions = {}): Promise<RunningS
     table,
     close: () =>
       new Promise((resolve) => {
+        bots.stop();
         io.close(() => resolve());
       }),
   };

@@ -1,6 +1,7 @@
 /** Helpers for server tests: real sockets against a real server on a random port. */
 import { io, type Socket } from 'socket.io-client';
 import type { Action, PlayerView } from '../rules/index.ts';
+import type { Clock } from './app.ts';
 
 export interface TestClient {
   socket: Socket;
@@ -37,4 +38,31 @@ export function connect(url: string, token: string): Promise<TestClient> {
     socket.once('connect', () => resolve(client));
     socket.once('connect_error', reject);
   });
+}
+
+/** A fake clock for the server's timers: the Response window and the Bots' pace. */
+export function fakeClock() {
+  let now = 0;
+  let timers: { at: number; fn: () => void; id: number }[] = [];
+  let next = 1;
+  const clock: Clock = {
+    now: () => now,
+    setTimeout(fn, ms) {
+      const id = next++;
+      timers.push({ at: now + ms, fn, id });
+      return id;
+    },
+    clearTimeout(id) {
+      timers = timers.filter((t) => t.id !== id);
+    },
+  };
+  return {
+    clock,
+    tick(ms: number) {
+      now += ms;
+      const due = timers.filter((t) => t.at <= now);
+      timers = timers.filter((t) => t.at > now);
+      for (const t of due) t.fn();
+    },
+  };
 }
