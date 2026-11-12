@@ -1,29 +1,74 @@
 import type { Action, Dir, PlayerView } from '../../../rules/index.ts';
+import { ARROW_DRAWING } from '../../art/inHouse.ts';
 import { send } from '../../socket.ts';
-import styles from './Board.module.css';
+import { PixelArt } from '../PixelArt.tsx';
+import styles from './Controls.module.css';
 
-const ARROW: Record<Dir, string> = { N: '↑', E: '→', S: '↓', W: '←' };
+const DIRS: Dir[] = ['N', 'W', 'E', 'S'];
+const DIR_NAMES: Record<Dir, string> = { N: 'North', E: 'East', S: 'South', W: 'West' };
 
-/** Contextual action buttons, right above the Player's own piece. */
-export function Controls({
-  view,
-  at,
-  size,
-  tile,
-}: {
-  view: PlayerView;
-  at: number;
-  size: number;
-  tile: number;
-}) {
-  const buttons = view.options.flatMap((o) => button(view, o));
-  if (buttons.length === 0) return null;
+type DirAction = Extract<Action, { type: 'step' | 'chooseHeading' | 'compass' }>;
+const isDir = (a: Action): a is DirAction =>
+  a.type === 'step' || a.type === 'chooseHeading' || a.type === 'compass';
+
+/** The control dock under the board: a D-pad for whichever way-picking is live, and buttons. */
+export function Controls({ view }: { view: PlayerView }) {
+  const dirs = view.options.filter(isDir);
+  const stop = view.options.some((o) => o.type === 'stop');
+  // Stop sits in the D-pad's hub when there is a pad, and among the buttons when there isn't.
+  const rest = view.options.flatMap((o) =>
+    o.type === 'stop' && dirs.length ? [] : button(view, o),
+  );
+  if (dirs.length === 0 && rest.length === 0) return null;
   return (
-    <div
-      className={styles.controls}
-      style={{ left: (at % size) * tile + tile / 2, top: Math.floor(at / size) * tile }}
-    >
-      {buttons}
+    <div className={styles.dock} role="group" aria-label="Your moves">
+      {dirs.length ? <DPad view={view} dirs={dirs} stop={stop} /> : null}
+      {rest.length ? <div className={styles.actions}>{rest}</div> : null}
+    </div>
+  );
+}
+
+const CAPTION: Record<DirAction['type'], string> = {
+  step: 'Step',
+  chooseHeading: 'Set off',
+  compass: 'Compass',
+};
+
+function DPad({ view, dirs, stop }: { view: PlayerView; dirs: DirAction[]; stop: boolean }) {
+  const kind = dirs[0]!.type;
+  return (
+    <div className={styles.pad} aria-label={CAPTION[kind]}>
+      {DIRS.map((d) => {
+        const action = dirs.find((a) => a.dir === d);
+        const pivot =
+          kind === 'compass' || (kind === 'step' && view.moves.some((m) => m.dir === d && m.pivot));
+        return (
+          <button
+            key={d}
+            type="button"
+            className={`${styles.arrow} ${styles[d]} ${pivot ? styles.pivot : styles.free}`}
+            disabled={!action}
+            aria-label={`${CAPTION[kind]} ${DIR_NAMES[d]}${pivot ? ' (Pivot)' : ''}`}
+            onClick={action ? () => void send(action) : undefined}
+          >
+            <PixelArt drawing={ARROW_DRAWING} size="100%" />
+          </button>
+        );
+      })}
+      {stop ? (
+        <button
+          type="button"
+          className={styles.hub}
+          aria-label="Stop"
+          onClick={() => void send({ type: 'stop' })}
+        >
+          Stop
+        </button>
+      ) : (
+        <span className={`${styles.hub} ${styles.caption}`} aria-hidden>
+          {CAPTION[kind]}
+        </span>
+      )}
     </div>
   );
 }
@@ -33,24 +78,10 @@ function button(view: PlayerView, action: Action) {
   switch (action.type) {
     case 'roll':
       return [
-        <button key="roll" type="button" onClick={go}>
+        <button key="roll" type="button" className={styles.primary} onClick={go}>
           🎲 Roll
         </button>,
       ];
-    case 'step': {
-      const pivot = view.moves.find((m) => m.dir === action.dir)?.pivot;
-      return [
-        <button
-          key={`step-${action.dir}`}
-          type="button"
-          className={pivot ? styles.pivotBtn : styles.free}
-          aria-label={`Step ${action.dir}${pivot ? ' (Pivot)' : ''}`}
-          onClick={go}
-        >
-          {ARROW[action.dir]}
-        </button>,
-      ];
-    }
     case 'stop':
       return [
         <button key="stop" type="button" onClick={go}>
@@ -63,20 +94,9 @@ function button(view: PlayerView, action: Action) {
           {takeLabel(view)}
         </button>,
       ];
-    case 'chooseHeading':
-      return [
-        <button
-          key={`heading-${action.dir}`}
-          type="button"
-          aria-label={`Set off ${action.dir}`}
-          onClick={go}
-        >
-          ⇢{ARROW[action.dir]}
-        </button>,
-      ];
     case 'resumeClash':
       return [
-        <button key="resume" type="button" onClick={go}>
+        <button key="resume" type="button" className={styles.primary} onClick={go}>
           ⚔ Resume the Clash
         </button>,
       ];
@@ -84,17 +104,6 @@ function button(view: PlayerView, action: Action) {
       return [
         <button key="away" type="button" onClick={go}>
           Move away
-        </button>,
-      ];
-    case 'compass':
-      return [
-        <button
-          key={`compass-${action.dir}`}
-          type="button"
-          aria-label={`Compass: turn ${action.dir}`}
-          onClick={go}
-        >
-          🧭{ARROW[action.dir]}
         </button>,
       ];
     case 'acceptLost':
@@ -119,7 +128,7 @@ function button(view: PlayerView, action: Action) {
     }
     case 'endTurn':
       return [
-        <button key="end" type="button" onClick={go}>
+        <button key="end" type="button" className={styles.primary} onClick={go}>
           End Turn
         </button>,
       ];

@@ -33,33 +33,6 @@
   place-items: center;
   filter: drop-shadow(0 2px 0 rgb(0 0 0 / 0.35));
 }
-.controls {
-  position: absolute;
-  left: 0;
-  top: 0;
-  z-index: 4;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  width: max-content;
-  max-width: 280px;
-  gap: 4px;
-  transform: translate(-50%, -110%);
-  white-space: nowrap;
-}
-.controls button {
-  padding: 4px 8px;
-  font-size: 16px;
-  background: var(--panel);
-  box-shadow: 0 2px 0 var(--outline);
-}
-.free {
-  color: var(--free);
-}
-.pivotBtn {
-  color: var(--pivot);
-}
-
 .pick {
   position: absolute;
   z-index: 5;
@@ -70,4 +43,20 @@
 .picked {
   background: color-mix(in srgb, var(--gold) 45%, transparent);
   border: 2px solid var(--gold);
+}
+
+/* How many pieces share a square, pinned to its top-right corner; tap to see who. */
+.stack {
+  position: absolute;
+  z-index: 3;
+  transform: translate(-70%, -30%);
+  min-width: 22px;
+  height: 22px;
+  padding: 0 4px;
+  font-size: 12px;
+  line-height: 1;
+  background: var(--gold);
+  color: var(--outline);
+  border: 2px solid var(--outline);
+  box-shadow: 0 2px 0 var(--outline);
 }

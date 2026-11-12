@@ -4,7 +4,6 @@ import { useScale } from '../../useScale.ts';
 import { BUILDING_SPRITES, GATE_SPRITE, GROUND, variant } from '../../art/sheets.ts';
 import { BUILDING_NAMES } from '../../blurbs.ts';
 import { Sprite } from '../Sprite.tsx';
-import { Controls } from './Controls.tsx';
 import { place } from './geometry.ts';
 import { PathSquare } from './PathSquare.tsx';
 import { Pieces } from './Pieces.tsx';
@@ -14,7 +13,6 @@ export function Board({
   view,
   level,
   shown,
-  settled,
   picks,
   onPick,
   onInspect,
@@ -22,7 +20,6 @@ export function Board({
   view: PlayerView;
   level: LevelName;
   shown: Record<string, PieceAt>;
-  settled: boolean;
   /** Squares picked while aiming an item, or null when not aiming. */
   picks: number[] | null;
   onPick: (square: number) => void;
@@ -31,7 +28,6 @@ export function Board({
 }) {
   const tile = 16 * useScale();
   const size = level === 'town' ? view.town.size : view.boards[level].size;
-  const me = view.you ? shown[view.you] : undefined;
   const picked = new Set(picks ?? []);
   return (
     <div className={styles.board} style={{ width: size * tile, height: size * tile }}>
@@ -59,7 +55,14 @@ export function Board({
             style={{ ...place(m.square, size, tile), inset: 'auto' }}
           />
         ))}
-      <Pieces view={view} shown={shown} level={level} size={size} tile={tile} />
+      <Pieces
+        view={view}
+        shown={shown}
+        level={level}
+        size={size}
+        tile={tile}
+        onInspect={onInspect}
+      />
       {picks
         ? squareIds(size).map((i) => (
             <button
@@ -73,9 +76,6 @@ export function Board({
             />
           ))
         : null}
-      {settled && me?.level === level ? (
-        <Controls view={view} at={me.square} size={size} tile={tile} />
-      ) : null}
     </div>
   );
 }

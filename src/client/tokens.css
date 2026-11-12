@@ -91,3 +91,11 @@ select {
   background: none;
   image-rendering: pixelated;
 }
+/* Inside a frame the ink is dark, so fields get a light well instead of the dark ground. */
+.frame :is(input, select) {
+  background: #fff8ea;
+  color: var(--ink);
+}
+.frame :is(input, select)::placeholder {
+  color: var(--ink-dim);
+}

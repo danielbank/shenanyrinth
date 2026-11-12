@@ -139,3 +139,20 @@ export const IN_HOUSE_ICONS = {
     ],
   },
 } satisfies Record<string, { colour: string; rows: string[] }>;
+
+/** The D-pad arrow, pointing North and rotated in CSS for the rest; its fill follows the text colour. */
+export const ARROW_DRAWING: Drawing = {
+  palette: { o: '#3f2631', x: 'currentColor' },
+  rows: [
+    '....oo....',
+    '...oxxo...',
+    '..oxxxxo..',
+    '.oxxxxxxo.',
+    'oxxxxxxxxo',
+    'oooxxxxooo',
+    '..oxxxxo..',
+    '..oxxxxo..',
+    '..oxxxxo..',
+    '..oooooo..',
+  ],
+};

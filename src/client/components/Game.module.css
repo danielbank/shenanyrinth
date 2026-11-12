@@ -16,9 +16,22 @@
 .stage {
   position: relative;
   overflow: auto;
-  display: grid;
-  place-items: center;
-  padding: 56px 8px 96px;
+  display: flex;
+  padding: 44px 8px 96px;
+}
+/* The board with its control dock beneath; auto margins centre it without clipping on scroll. */
+.table {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+/* Phones on their side have height to spare for nothing: put the dock beside the board. */
+@media (orientation: landscape) and (max-height: 600px) {
+  .table {
+    flex-direction: row;
+  }
 }
 .bottomLeft {
   position: absolute;

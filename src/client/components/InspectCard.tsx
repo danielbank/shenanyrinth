@@ -3,6 +3,7 @@ import type { LevelName, PlayerView, Trinket } from '../../rules/index.ts';
 import { describeSquare, ITEM_BLURBS, TRINKET_BLURBS } from '../blurbs.ts';
 import { itemName } from '../itemNames.ts';
 import { send } from '../socket.ts';
+import { HeroSprite } from './HeroSprite.tsx';
 import { Glyph } from './Icon.tsx';
 import styles from './Drawer.module.css';
 
@@ -51,7 +52,9 @@ function Body({
 }) {
   switch (target.kind) {
     case 'square':
-      return <SquareInfo view={view} level={target.level} square={target.square} />;
+      return (
+        <SquareInfo view={view} level={target.level} square={target.square} onInspect={onInspect} />
+      );
     case 'player':
       return <PlayerInfo view={view} id={target.id} onInspect={onInspect} />;
     case 'chip':
@@ -91,10 +94,12 @@ function SquareInfo({
   view,
   level,
   square,
+  onInspect,
 }: {
   view: PlayerView;
   level: LevelName;
   square: number;
+  onInspect: (next: Inspect) => void;
 }) {
   const here = view.players.filter((p) => p.level === level && p.square === square);
   const { title, lines } = describeSquare(view, level, square);
@@ -112,13 +117,24 @@ function SquareInfo({
           Damage {mob.damage}.
         </p>
       ) : null}
-      <Pieces names={here.map((p) => p.name)} />
+      {here.length ? (
+        <>
+          <p>Here:</p>
+          <ul className={styles.here}>
+            {here.map((p) => (
+              <li key={p.id}>
+                <button type="button" onClick={() => onInspect({ kind: 'player', id: p.id })}>
+                  <HeroSprite hero={p.hero} colour={p.colour} scale={2} />
+                  {p.name}
+                  {p.id === view.you ? ' (you)' : ''}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
     </>
   );
-}
-
-function Pieces({ names }: { names: string[] }) {
-  return names.length ? <p>Here: {names.join(', ')}</p> : null;
 }
 
 function PlayerInfo({

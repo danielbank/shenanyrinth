@@ -4,6 +4,7 @@ import { gameStore } from '../gameStore.ts';
 import { picksNeeded } from '../itemNames.ts';
 import { useGame } from '../useGame.ts';
 import { Board } from './board/Board.tsx';
+import { Controls } from './board/Controls.tsx';
 import { ClashPanel } from './ClashPanel.tsx';
 import { DeedsDrawer } from './DeedsDrawer.tsx';
 import { DiscardPanel } from './DiscardPanel.tsx';
@@ -51,15 +52,17 @@ export function Game({ view }: { view: PlayerView }) {
         />
       </header>
       <main className={styles.stage}>
-        <Board
-          view={view}
-          level={level}
-          shown={queue.shown}
-          settled={queue.settled}
-          picks={aim?.picks ?? null}
-          onPick={pick}
-          onInspect={(square) => setInspect({ kind: 'square', level, square })}
-        />
+        <div className={styles.table}>
+          <Board
+            view={view}
+            level={level}
+            shown={queue.shown}
+            picks={aim?.picks ?? null}
+            onPick={pick}
+            onInspect={(square) => setInspect({ kind: 'square', level, square })}
+          />
+          {queue.settled && level === myLevel ? <Controls view={view} /> : null}
+        </div>
         <LevelTabs current={level} mine={myLevel} onPick={setPeek} />
         {queue.settled ? null : (
           <button type="button" className={styles.skip} onClick={gameStore.skip}>
