@@ -64,14 +64,15 @@ export const MOB_SPRITES: Record<string, SpriteRef> = {
 };
 
 export const BUILDING_SPRITES: Record<Building, SpriteRef> = {
-  keepHall: town(86),
+  keepHall: town(85),
   blacksmith: town(115),
   apothecary: town(131),
   arcanist: town(128),
   guild: town(95),
 };
 
-export const GATE_SPRITE = town(112);
+/** One-sprite pieces only: the portcullis (111+112) and double doors (86+87) need two squares. */
+export const GATE_SPRITE = town(78);
 export const STAIRS_DOWN_SPRITE = town(103);
 export const STAIRS_UP_SPRITE = dungeon(39);
 
